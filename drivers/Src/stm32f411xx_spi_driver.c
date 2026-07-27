@@ -138,6 +138,11 @@ void SPI_DeInit(SPI_RegDef_t *pSPIx)
 
 }
 
+uint8_t SPI_GETFlagsStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName)
+{
+	trurn FLAG_RESET;
+}
+
 
 
 
@@ -156,7 +161,7 @@ void SPI_DeInit(SPI_RegDef_t *pSPIx)
  *
  *****************************************************************************/
 
-void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len)
+void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len) //called send data api , blocking api, we called like that because the function call wight until all the bits are transmited
 {
 
 }
