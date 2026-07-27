@@ -140,7 +140,11 @@ void SPI_DeInit(SPI_RegDef_t *pSPIx)
 
 uint8_t SPI_GETFlagsStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName)
 {
-	trurn FLAG_RESET;
+	if(pSPIx->SR & FlagName)
+	{
+		return FLAG_SET;
+	}
+	return FLAG_RESET;
 }
 
 
@@ -157,12 +161,40 @@ uint8_t SPI_GETFlagsStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName)
  *
  * @return      - none
  *
- * @Note        - none
+ * @Note        - This is a blocking call , the function will waite until all the bytes transfare also it will waite until TX is ready
  *
  *****************************************************************************/
 
 void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len) //called send data api , blocking api, we called like that because the function call wight until all the bits are transmited
 {
+	while (Len > 0)
+	{
+		//1. waite until TXE is set
+		while(SPI_GETFlagsStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET); // While (! (pSPIx->sr &(1 << 1); shift on by 1 bit the TXE position in sr register is the mask 1<<1 AND SR =0 and with ! it will be 1 the while will hange if not  the while will get out
+
+		//2. check the DFF bit inCR1
+		if (pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits.
+		{
+			//16 bits DFF
+			//1. load the data in to DR
+			pSPIx->DR = *((uint16_t*)pTxBuffer); //DR, Data register,
+			//First star mean go to than pointer and give me it value , the uint16_t* mean
+			//treat this pointer as if it points to 2 bytes.
+			Len--;
+			Len--;
+			(uint16_t*)pTxBuffer++;
+
+		}else
+			{
+			//8 bits DFF
+			//1. load the data in to DR
+			pSPIx->DR = *pTxBuffer; //DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
+			Len--; //one time dicrese the leangth
+			pTxBuffer++;
+
+			}
+
+	}
 
 }
 

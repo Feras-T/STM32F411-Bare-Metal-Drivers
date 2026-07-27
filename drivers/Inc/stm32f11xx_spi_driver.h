@@ -14,6 +14,7 @@
 
 #include "stm32f411xx.h"
 
+
 typedef struct
 {
 	uint8_t SPI_DeviceMode;
@@ -90,7 +91,12 @@ typedef struct
 #define SPI_SSM_EN	1 			//SPI_SSM hardware mode
 #define SPI_SSM_DI	0			//SPI_SSM software mode (the defult mode)
 
-
+/*
+ * SPI related status flags definitions
+ */
+#define SPI_TXE_FLAG		(1 << SPI_SR_TXE)
+#define SPI_RXNE_FLAG		(1 << SPI_SR_RXNE)
+#define SPI_BUSY_FLAG		(1 << SPI_SR_BSY)
 
 /******************************************************************************************
 *                         APIs supported by this driver
