@@ -14,9 +14,11 @@
 // PA4 SPI1_NSS
 //ALT Fun mode : AF05
 
+
+#include <string.h>
 #include "stm32f411xx.h"
 
-void SPI_GPIOInit(void)
+void SPI1_GPIOInit(void)
 {
 	GPIO_Handle_t SPIPins;
 
@@ -36,12 +38,53 @@ void SPI_GPIOInit(void)
 	GPIO_Init(&SPIPins);
 
 	//MISO
-	SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_6;
-	GPIO_Init(&SPIPins);
+	//SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_6;
+	//GPIO_Init(&SPIPins);
 
 
 	//NSS
-	SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_4;
-	GPIO_Init(&SPIPins);
+	//SPIPins.GPIO_PinConfig.GPIO_PinNumber = GPIO_PIN_NO_4;
+	//GPIO_Init(&SPIPins); // GPIO_Init writtenn in driver
+
+}
+
+void SPI1_Inits(void)
+{
+
+	//Review the type def and how mutiple tyedef works
+	SPI_Handle_t SPI1handle;   //SPI1_Handle the varible that i want SPI_Handle_t do all of its rhings iside it in  SPI1_Handle (check it)
+	SPI1handle.SPIConfig.SPI_BusConfig= SPI_BUS_CONFIG_FD;
+	SPI1handle.SPIConfig.SPI_DeviceMode=SPI_DEVICE_MODE_MASTER;
+	SPI1handle.SPIConfig.SPI_SclkSpeed= SPI_SCLK_SPEED_DIV2;
+	SPI1handle.SPIConfig.SPI_DFF=SPI_DFF_8BITS;
+	SPI1handle.SPIConfig.SPI_CPOL=SPI_CPOL_LOW;
+	SPI1handle.SPIConfig.SPI_SSM=SPI_SSM_EN; //Softwer slave managemnt enabled for NSS pin
+
+	SPI_Init(&SPI1handle);
+
+
+}
+
+int main(void)
+{
+	char user_data[]="Hello World";
+
+	//This function is used to initialize the GPIO pins to behave like SPI1 pins
+	SPI1_GPIOInit();
+
+	//This function is used to initialize the SPI1preiphral parameters
+	SPI1_Inits();
+
+	//enable the SPI2 Peripheral
+	SPI_PeripheralControl(SPI1,ENABLE); //We have to enavle The spi to transmite (the SPE in Control register 1)
+
+	//TO send data
+	SPI_SendData(SPI2, (uint8_t*)user_data, strlen(user_data));
+
+
+	while(1);
+
+	return(0);
+
 
 }

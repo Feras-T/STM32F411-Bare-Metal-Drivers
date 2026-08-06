@@ -62,7 +62,13 @@ void SPI_PeriClockControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
  */
 void SPI_Init(SPI_Handle_t *pSPIHandle)  // (void), the parameters will be written later
 {
-	uinit tempreg =0;
+
+	SPI_PeriClockControl(pSPIHandle->pSPIx, ENABLE);
+
+	uint32_t tempreg =0;
+
+	//Peripheral clock  enable
+
 
 	//1. configure the device mode
 	//Decive control wherthere to be master or slave
@@ -285,4 +291,32 @@ void SPI_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority)
 void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when it comes
 {
 
+}
+
+
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pSPIx->CR1 |= (1 << SPI_CR1_SPE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+	}else
+	{
+		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
+	}
 }
