@@ -216,7 +216,7 @@ typedef struct
  */
 
 #define GPIOA_PCLK_EN()		(RCC->AHB1ENR |= (1 <<0) )			//To write afunction in macros you have to add (), GPIOA_PCLK_EN()= GPIOA_PERI_CLOCK_ENABLE()
-#define GPIOB_PCLK_EN()		(RCC->AHB1ENR |= (1 <<1) )
+#define GPIOB_PCLK_EN()		(RCC->AHB1ENR |= (1 <<1) )			// rcc its is a pointer because its cast to as a pointer for rcc_baseadder to rcc_regdef struct thats what ((RCC_RegDef_t*)RCC_BASEADDR) mean
 #define GPIOC_PCLK_EN()		(RCC->AHB1ENR |= (1 <<2) )
 #define GPIOD_PCLK_EN()		(RCC->AHB1ENR |= (1 <<3) )
 #define GPIOE_PCLK_EN()		(RCC->AHB1ENR |= (1 <<4) )
@@ -369,7 +369,7 @@ typedef struct
   *Bit position definitions of SPI peripheral
  *********************************************************/
 
-#define SPI_CR1_CHPA		0
+#define SPI_CR1_CPHA   		0
 #define SPI_CR1_CPOL		1
 #define SPI_CR1_MSTR		2
 #define SPI_CR1_BR			3
@@ -398,7 +398,7 @@ typedef struct
 
 
 /*
- * Bit position definition SPI_SR
+ * Bit position definition SPI_SR (SPI_Sataus register
  */
 
 #define SPI_SR_RXNE			0
@@ -408,7 +408,7 @@ typedef struct
 #define SPI_SR_CRCERR		4
 #define SPI_SR_MODF			5
 #define SPI_SR_OVR			6
-#define SPI_SR_FRY			7
+#define SPI_SR_BSY          7
 #define SPI_SR_FRE			8
 
 

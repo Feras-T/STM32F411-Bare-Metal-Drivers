@@ -93,6 +93,10 @@ typedef struct
 
 /*
  * SPI related status flags definitions
+ * TXE is 1 in smt32.h so the bit 1 is the register mask it with 1 it becoumes 0000 0010
+ * and when we need to operate it like The Flag example FlagGetStatus in spi.c we operate with AND
+ *if(pSPIx->SR & FlagName) (SR value) & 0000 0010 is 1 becomes if(1) and do the function and
+ *if TXE in SR not 1 becomes If(0)
  */
 #define SPI_TXE_FLAG		(1 << SPI_SR_TXE)
 #define SPI_RXNE_FLAG		(1 << SPI_SR_RXNE)
@@ -129,8 +133,14 @@ void SPI_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority);
 void SPI_IRQHandling(SPI_Handle_t *pHandle);		//To prossesor that interrupt when it comes
 
 /*
+ * flag stsus
+ */
+
+uint8_t SPI_GETFlagStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName);
+
+/*
  * Other Peripheral Control APIs
  */
 void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi);
-
+void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi);
 #endif /* INC_STM32F11XX_SPI_DRIVER_H_ */

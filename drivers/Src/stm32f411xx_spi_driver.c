@@ -105,6 +105,9 @@ void SPI_Init(SPI_Handle_t *pSPIHandle)  // (void), the parameters will be writt
 	// 6. Configure the spi serial Clock speed (baud rate)
 	tempreg |= pSPIHandle->SPIConfig.SPI_CPHA <<0 ;
 
+	tempreg |= pSPIHandle->SPIConfig.SPI_SSM << SPI_CR1_SSM;
+
+
 	pSPIHandle ->pSPIx->CR1 =tempreg;
 
 
@@ -144,9 +147,9 @@ void SPI_DeInit(SPI_RegDef_t *pSPIx)
 
 }
 
-uint8_t SPI_GETFlagsStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName)
+uint8_t SPI_GETFlagStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName)
 {
-	if(pSPIx->SR & FlagName)
+	if(pSPIx->SR & FlagName) 		//if Flage name wehther it is  SPI_TXE_FLAG or any other on is
 	{
 		return FLAG_SET;
 	}
@@ -176,19 +179,24 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len) //calle
 	while (Len > 0)
 	{
 		//1. waite until TXE is set
-		while(SPI_GETFlagsStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET); // While (! (pSPIx->sr &(1 << 1); shift on by 1 bit the TXE position in sr register is the mask 1<<1 AND SR =0 and with ! it will be 1 the while will hange if not  the while will get out
+		while(SPI_GETFlagStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET);
+		// While (! (pSPIx->sr &(1 << 1); shift on by 1 bit the TXE position in sr register is the mask 1<<1 AND SR =0 and with ! it will be 1 the while will hange if not  the while will get out
+		//FLAG_RESET=0, If FlagName(SPI_TXE_FLAG) is 1 the wile will exit and code will implemnt
+		//if the FlagName(SPI_TXE_FLAG)=0 the wile will be wile(0=0) -> while(1) and will hang
 
-		//2. check the DFF bit inCR1
-		if (pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits.
+		//2. check the DFF bit in CR1
+		if (pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits., make mask with SPI_CR1_DFF and And it with CR1 to check whether 16bit is enabeled or not
 		{
 			//16 bits DFF
 			//1. load the data in to DR
-			pSPIx->DR = *((uint16_t*)pTxBuffer); //DR, Data register,
+			pSPIx->DR = *((uint16_t*)pTxBuffer); //DR, Data register,*pTxBuffer Go to address 0x20000100 and give me the value stored there.
 			//First star mean go to than pointer and give me it value , the uint16_t* mean
-			//treat this pointer as if it points to 2 bytes.
+			//Treat pTxBuffer as a pointer to uint16_t, then dereference it
+			//and get the actual 16-bit value stored there.
+			//((uint16_t*)pTxBuffer); without the fist d+star mean go to the address of pTxBuffer pointer not the value inside the pointer.
 			Len--;
 			Len--;
-			(uint16_t*)pTxBuffer++;
+			(uint16_t*)pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
 
 		}else
 			{
@@ -319,4 +327,34 @@ void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
 	{
 		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
 	}
+}
+
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+
+
+		if(EnorDi == ENABLE)
+		{
+			pSPIx->CR1 |= (1 << SPI_CR1_SSI);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+		}else
+		{
+			pSPIx->CR1 &= ~(1 << SPI_CR1_SSI);
+		}
+
 }
