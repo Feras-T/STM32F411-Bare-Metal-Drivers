@@ -132,7 +132,7 @@ int main(void)
 
 while(1)
 	{
-	while ( ! GPIO_ReadFromInputPin(GPIOA, GPIO_PIN_NO_13));
+	while ( ! GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NO_13));
 
 	delay();
 //	SPI_SSIConfig(SPI1, ENABLE); no need for ssm_Di
