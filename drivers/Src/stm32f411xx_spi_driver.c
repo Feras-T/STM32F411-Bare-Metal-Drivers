@@ -229,8 +229,33 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len) //calle
 
 void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
 {
+	//1. waite until RXE is set
+		while(SPI_GETFlagStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET);
 
-}
+
+		//2. check the DFF bit in CR1
+		if (pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits., make mask with SPI_CR1_DFF and And it with CR1 to check whether 16bit is enabeled or not
+		{
+			//16 bits DFF
+			//1. load the data From Dr to pRxBuffer
+			*((uint16_t*)pRxBuffer)=pSPIx->DR; //Know we have to read from DR , Data register
+
+			Len--;
+			Len--;
+			(uint16_t*)pRxBuffer++; // (uint16_t*) to incremnt pointer by 2
+
+		}else
+			{
+			//8 bits DFF
+			//1. load the data in to DR
+			*(pRxBuffer)=pSPIx->DR;//DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
+			Len--; //one time dicrese the leangth
+			pRxBuffer++;
+
+			}
+
+	}
+
 
 /*
  * IRQ Configuration and ISR Handling
@@ -358,3 +383,35 @@ void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
 		}
 
 }
+
+/******************************************************************************
+ * @fn          - SPI_SSOEConfig
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+
+void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+
+		if(EnorDi == ENABLE)
+		{
+			pSPIx->CR2 |= (1 << SPI_CR2_SSOE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+		}else
+		{
+			pSPIx->CR2 &= ~(1 << SPI_CR2_SSOE);
+		}
+
+}
+
+

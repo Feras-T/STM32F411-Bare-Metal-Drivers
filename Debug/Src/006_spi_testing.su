@@ -1,3 +1,0 @@
-../Src/006_spi_testing.c:21:6:SPI1_GPIOInit	24	static
-../Src/006_spi_testing.c:51:6:SPI1_Inits	24	static
-../Src/006_spi_testing.c:71:5:main	24	static

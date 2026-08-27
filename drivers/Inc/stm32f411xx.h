@@ -388,13 +388,13 @@ typedef struct
  * Bit position definition SPI_CR2
  */
 
-#define SPI_CR1_RXDMAE		0
-#define SPI_CR1_TXDMAEN		1
-#define SPI_CR1_SSOE		2
-#define SPI_CR1_FRF			4
-#define SPI_CR1_ERRIE		5
-#define SPI_CR1_RXNEIE		6
-#define SPI_CR1_TXEIE		7
+#define SPI_CR2_RXDMAE		0
+#define SPI_CR2_TXDMAEN		1
+#define SPI_CR2_SSOE		2
+#define SPI_CR2_FRF			4
+#define SPI_CR2_ERRIE		5
+#define SPI_CR2_RXNEIE		6
+#define SPI_CR2_TXEIE		7
 
 
 /*
