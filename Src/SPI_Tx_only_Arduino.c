@@ -81,17 +81,6 @@ void SPI1_Inits(void)
 
 }
 
-int main(void)
-{
-	char user_data[]="Hello World";
-
-	//This function is used to initialize the GPIO pins to behave like SPI1 pins
-	SPI1_GPIOInit();
-
-	//This function is used to initialize the SPI1preiphral parameters
-	SPI1_Inits();
-
-
 void GPIO_ButtonInit(void)
 {
 	GPIO_Handle_t GPIOBtn;
@@ -105,11 +94,24 @@ void GPIO_ButtonInit(void)
 	// GPIO_PeriClockControl(GPIOC, ENABLE); we did it automatically in driver code itself
 	GPIO_Init (&GPIOBtn);
 }
+
+int main(void)
+{
+	char user_data[]="Hello World";
+
+	//This function is used to initialize the GPIO pins to behave like SPI1 pins
+	SPI1_GPIOInit();
+
+	//This function is used to initialize the SPI1preiphral parameters
+	SPI1_Inits();
+
+
+
 	SPI_SSOEConfig(SPI1, ENABLE);
 
 while(1)
 	{
-	while ( ! GPIO_ReadFromInputPin(GPIOA, GPIO_PIN_NO_13));
+	while ( ! GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NO_13));
 
 	delay();
 //	SPI_SSIConfig(SPI1, ENABLE); no need for ssm_Di
@@ -121,7 +123,8 @@ while(1)
 
 	// first send length information
 
-
+	uint8_t dataLen =strlen(user_data);
+	SPI_SendData(SPI1, &dataLen, 1);
 
 	//TO send data
 	SPI_SendData(SPI1, (uint8_t*)user_data, strlen(user_data));

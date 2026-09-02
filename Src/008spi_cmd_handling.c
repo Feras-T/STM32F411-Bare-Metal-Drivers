@@ -172,6 +172,57 @@ while(1)
 		SPI_SendData(SPI1, args,2);
 	}
 
+
+	//2. CMD_SENSOR_READ  <analog pin number (!)>
+	while ( ! GPIO_ReadFromInputPin(GPIOC, GPIO_PIN_NO_13));
+
+	delay();
+
+	commandcode= COMMAND_SENSOR_READ;
+	//send command
+	SPI_SendData(SPI1, &commandcode, 1);
+
+
+	//do dummy read to clear off RXNE
+	SPI_ReceiveData(SPI1, &dummy_read, 1);
+
+
+	//send some dummy bits (1byte) to fetch the response from slave
+	SPI_SendData(SPI1,&dummy_write,1);
+
+	//Read the ack byte recived
+	SPI_ReceiveData(SPI1, &ackbyte, 1);
+
+	if (SPI_VerifyResponse(ackbyte))
+	{
+		//send arguments
+		args[0]= ANALOG_PIN0;
+
+		//send arguments
+		SPI_SendData(SPI1, args,1);
+	}
+	//do dummy read to clear off RXNE
+	//We have to do dummey read here because we sent SPI_SendData(SPI1, args,1);
+	SPI_ReceiveData(SPI1, &dummy_read, 1);
+
+	//Now the slave will read the analog pin so we have to w8 some
+	//microsecound until we the slave finish
+
+	delay();
+
+	//sending dummey to reseave the response of slave
+	SPI_SendData(SPI1,&dummy_write,1);
+
+
+
+	//send some dummy bits (1byte) to fetch the response from slave
+	SPI_SendData(SPI1,&dummy_write,1);
+
+	//receve analog data
+	uint8_t analog_read;
+	SPI_ReceiveData(SPI1, &analog_read, 1);
+
+
 	//TO send data
 	//SPI_SendData(SPI1, (uint8_t*)user_data, strlen(user_data));
 

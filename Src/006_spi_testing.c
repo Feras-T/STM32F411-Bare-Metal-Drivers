@@ -85,7 +85,7 @@ int main(void)
 	SPI_PeripheralControl(SPI1,ENABLE); //We have to enavle The spi to transmite (the SPE in Control register 1)
 
 	//
-	uint8_t dataLen =stelen(user_data);
+	uint8_t dataLen =strlen(user_data);
 	SPI_SendData(SPI1, &dataLen, 1);
 
 	//TO send data
