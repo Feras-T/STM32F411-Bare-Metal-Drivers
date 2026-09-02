@@ -193,6 +193,8 @@ while(1)
 	//Read the ack byte recived
 	SPI_ReceiveData(SPI1, &ackbyte, 1);
 
+	//If ackbyte rescived do the below code
+
 	if (SPI_VerifyResponse(ackbyte))
 	{
 		//send arguments
@@ -200,31 +202,31 @@ while(1)
 
 		//send arguments
 		SPI_SendData(SPI1, args,1);
+
+
+		//do dummy read to clear off RXNE
+		//We have to do dummey read here because we sent SPI_SendData(SPI1, args,1);
+		SPI_ReceiveData(SPI1, &dummy_read, 1);
+
+		//Now the slave will read the analog pin so we have to w8 some
+		//microsecound until we the slave finish
+
+		delay();
+
+		//sending dummey to reseave the response of slave
+		SPI_SendData(SPI1,&dummy_write,1);
+
+
+
+		//send some dummy bits (1byte) to fetch the response from slave
+		SPI_SendData(SPI1,&dummy_write,1);
+
+		//receve analog data
+		uint8_t analog_read;
+		SPI_ReceiveData(SPI1, &analog_read, 1);
 	}
-	//do dummy read to clear off RXNE
-	//We have to do dummey read here because we sent SPI_SendData(SPI1, args,1);
-	SPI_ReceiveData(SPI1, &dummy_read, 1);
-
-	//Now the slave will read the analog pin so we have to w8 some
-	//microsecound until we the slave finish
-
-	delay();
-
-	//sending dummey to reseave the response of slave
-	SPI_SendData(SPI1,&dummy_write,1);
 
 
-
-	//send some dummy bits (1byte) to fetch the response from slave
-	SPI_SendData(SPI1,&dummy_write,1);
-
-	//receve analog data
-	uint8_t analog_read;
-	SPI_ReceiveData(SPI1, &analog_read, 1);
-
-
-	//TO send data
-	//SPI_SendData(SPI1, (uint8_t*)user_data, strlen(user_data));
 
 	//Lets confirm SPI not Busy
 	while(SPI_GETFlagStatus(SPI1, SPI_BUSY_FLAG));// w8 until all measage send.

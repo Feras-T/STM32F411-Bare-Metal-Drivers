@@ -33,8 +33,21 @@ typedef struct
 typedef struct
 {
 	SPI_RegDef_t	*pSPIx;
-	SPI_Config_t	SPIConfig;
+	SPI_Config_t	 SPIConfig;
+	uint8_t			*pTxBuffer;  /* < To store the application. Tx Buffer address > */
+	uint8_t 		*pRxBuffer;  /* < To store the application. Rx Buffer address > */
+	uint32_t		 TxLen;	   	 /* < To store TX Len > */
+	uint32_t;	 	 RxLen;		 /* < To store RX Len > */
+	uint8_t			 TxState;	 /* < To store TX State > */
+	uint8_t			 RxState;     /* < To store RX State > */
 }SPI_Handle_t;
+
+/*
+ * SPI Application State
+ */
+#define  SPI_READY			0
+#define  SPI_BUSY_IN_RX		1
+#define  SPI_BUSY_IN_TX     2
 
 /*
  * @SPI_DeviceMode
@@ -123,6 +136,12 @@ void SPI_DeInit(SPI_RegDef_t *pSPIx);
  */
 void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len);
 void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len);
+
+/*
+ * Data Send and Receive Itrerrupt base;
+ */
+uint8_t SPI_SendDataIT(SPI_Handle_t *SPIHandle, uint8_t *pTxBuffer, uint32_t Len);
+uint8_t SPI_ReceiveDataIT(SPI_Handle_t *SPIHandle, uint8_t *pRxBuffer, uint32_t Len);
 
 /*
  * IRQ Configuration and ISR Handling
