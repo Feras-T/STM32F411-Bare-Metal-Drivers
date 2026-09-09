@@ -8,6 +8,7 @@
 #ifndef INC_STM32F411XXH_
 #define INC_STM32F411XXH_
 
+#include <stddef.h>
 #include <stdint.h>   // The shorthand notations are defined in standared library file (stdint.h)
 #define __vo volatile
 

@@ -7,6 +7,20 @@
 
 
 #include "stm32f11xx_spi_driver.h"
+
+/*
+ * These are private helper functions, so we define them in the SPI.c file.
+ *
+ * The static keyword gives them internal linkage, meaning they can only
+ * be called from within this SPI.c file.
+ *
+ * If another source file tries to call them, the linker will report an
+ * undefined-reference error.
+ */
+
+static void pi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_rxne_interrupt_handle(SPI_Handle_t *pSPIHandle);
 /*
  * Peripheral Clock setup
  */
@@ -196,7 +210,8 @@ void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len) //calle
 			//((uint16_t*)pTxBuffer); without the fist d+star mean go to the address of pTxBuffer pointer not the value inside the pointer.
 			Len--;
 			Len--;
-			(uint16_t*)pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+			pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+			pTxBuffer++;
 
 		}else
 			{
@@ -321,8 +336,38 @@ void SPI_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority)
  *
  *****************************************************************************/
 
+
 void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when it comes
 {
+	uint8_t temp1, temp2;
+	//first lest check for TXE
+	temp1= pHhandle->SR & (1 << SPI_SR_TXE);
+	temp2 =pHandle->pSPIx->CR2 (1 << SPI_CR2_TXEIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle TXE
+		spi_txe_interrupt_handle();
+	}
+
+	//check for RXNE
+	temp1= pHhandle->SR & (1 << SPI_SR_RXNE);
+	temp2 =pHandle->pSPIx->CR2 (1 << SPI_CR2_RXNEIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle RXNE
+		spi_rxne_interrupt_handle();
+	}
+	//check for ovr flag
+	temp1= pHhandle->SR & (1 << SPI_SR_OVRE);
+	temp2 =pHandle->pSPIx->CR2 (1 << SPI_CR2_ERRIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle TXE
+		spi_ovr_err_interrupt_handle();
+	}
 
 }
 
@@ -419,7 +464,7 @@ uint8_t SPI_SendDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pTxBuffer, uint8_t Len
 {
 	uint8_t state =pSPIHandle->TxState;
 
-	if(!state != SPI_BUSY_IN_TX)
+	if(state != SPI_BUSY_IN_TX)
 	{
     // 1. Save the TX buffer address and length information
     //    in global variables.
@@ -438,11 +483,11 @@ uint8_t SPI_SendDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pTxBuffer, uint8_t Len
 	return state;
 }
 
-uint8_t SPI_ReceiveDataIT(SPI_Handle_t *SPIHandle, uint8_t *pRxBuffer, uint32_t Len)
+uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t Len)
 {
 	uint8_t state =pSPIHandle->RxState; //RxState will get its value
 
-	if(!state != SPI_BUSY_IN_RX)
+	if(state != SPI_BUSY_IN_RX)
 	{
     // 1. Save the TX buffer address and length information
     //    in global variables.
@@ -459,4 +504,70 @@ uint8_t SPI_ReceiveDataIT(SPI_Handle_t *SPIHandle, uint8_t *pRxBuffer, uint32_t 
     //    which will be implemented later.
 	}
 	return state; // WHY Return status , for what?
+}
+
+
+//some helper function implenmention
+
+static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
+{
+
+		if (pSPIHandle->pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits., make mask with SPI_CR1_DFF and And it with CR1 to check whether 16bit is enabeled or not
+		{
+			//16 bits DFF
+			//1. load the data in to DR
+			pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuffer); //DR, Data register,*pTxBuffer Go to address 0x20000100 and give me the value stored there.
+			//First star mean go to than pointer and give me it value , the uint16_t* mean
+			//Treat pTxBuffer as a pointer to uint16_t, then dereference it
+			//and get the actual 16-bit value stored there.
+			//((uint16_t*)pTxBuffer); without the fist d+star mean go to the address of pTxBuffer pointer not the value inside the pointer.
+			pSPIHandle->TxLenL--;
+			pSPIHandle->TxLenL--;
+			(uint16_t*)pSPIHandle->pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+			(uint16_t*)pSPIHandle->pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+
+		}else
+			{
+			//8 bits DFF
+			//1. load the data in to DR
+			pSPIx->DR = *pSPIHandle->pTxBuffer; //DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
+			pSPIHandle->TxLenL--; //one time dicrese the leangth
+			pSPIHandle->pTxBuffer++;
+
+			}
+		if (! pSPIHandle->pTxLen)
+		{
+			//Txlen is Zero , so close th spi transsmition and inform the application that
+			//TX is over
+			//This prevents interrupts from setting up of RXE Flag
+			pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE);
+			pSPIHandle->pTxBuffer= NULL; // (reset the buffer) NULL is not define , the NULL is on stndard def.h so we shall include it standared header file stm32f411xx.h.
+			pSPIHandle->TxLen= 0;
+			pSPIHandle->TxState= SPI_READY;
+			void SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
+}
+static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle)
+{
+	if(pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF))
+	{
+		//Red the lin from right to left
+		// read 16 bit from DR and save it in the value that pRxbuffer is refering to and save 16 bit
+		*((uint16_t*)pSPIHandle->pRxBuffer) = (uint16_t) pSPIHandle->pSPIx->DR;
+		pSPIHandle->RxLen -=2; //which is equivent to RxLen--; RxLen--;
+		pSPIHandle->pRxBuffer--;
+		pSPIHandle->pRxBuffer--;
+	}else
+	{
+		//8 bit
+		*(pSPIHandle->pRxBuffer) =(uint8_t) pSPIHandle->pSPIx->DR;
+		pSPIHandle->pRxBuffer--;
+		pSPIHandle->pRxBuffer--;
+	}
+
+
+}
+static void spi_rxne_interrupt_handle(SPI_Handle_t *pSPIHandle)
+{
+
+}
 }
