@@ -272,6 +272,36 @@ void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
 	}
 
 
+
+
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pSPIx->CR1 |= (1 << SPI_CR1_SPE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+	}else
+	{
+		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
+	}
+}
+
+
 /*
  * IRQ Configuration and ISR Handling
  */
@@ -347,7 +377,7 @@ void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when 
 	if (temp1 && temp2)
 	{
 		//Handle TXE
-		spi_txe_interrupt_handle();
+		spi_txe_interrupt_handle(pHandle);
 	}
 
 	//check for RXNE
@@ -357,7 +387,7 @@ void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when 
 	if (temp1 && temp2)
 	{
 		//Handle RXNE
-		spi_rxne_interrupt_handle();
+		spi_rxne_interrupt_handle(pHandle);
 	}
 	//check for ovr flag
 	temp1= pHhandle->SR & (1 << SPI_SR_OVRE);
@@ -366,38 +396,11 @@ void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when 
 	if (temp1 && temp2)
 	{
 		//Handle TXE
-		spi_ovr_err_interrupt_handle();
+		spi_ovr_err_interrupt_handle(pHandle);
 	}
 
 }
 
-
-/******************************************************************************
- * @fn          - GPIO_PerClockControl
- *
- * @brief       - This function enables and disables prehihpral clock for given GPIO port
- *
- * @param[in]   -base address of the gpio peripheral
- * @param[in]   -ENABLE or Disable macros
- * @param[in]   -
- *
- * @return      - none
- *
- * @Note        - none
- *
- *****************************************************************************/
-
-
-void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
-{
-	if(EnorDi == ENABLE)
-	{
-		pSPIx->CR1 |= (1 << SPI_CR1_SPE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
-	}else
-	{
-		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
-	}
-}
 
 /******************************************************************************
  * @fn          - GPIO_PerClockControl
@@ -535,17 +538,13 @@ static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 			pSPIHandle->pTxBuffer++;
 
 			}
+
 		if (! pSPIHandle->pTxLen)
 		{
-			//Txlen is Zero , so close th spi transsmition and inform the application that
-			//TX is over
-			//This prevents interrupts from setting up of RXE Flag
-			pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE);
-			pSPIHandle->pTxBuffer= NULL; // (reset the buffer) NULL is not define , the NULL is on stndard def.h so we shall include it standared header file stm32f411xx.h.
-			pSPIHandle->TxLen= 0;
-			pSPIHandle->TxState= SPI_READY;
+			SPI_CloseTransmisson(pSPIHandle);
 			void SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
 }
+		}
 static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 {
 	if(pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF))
@@ -566,19 +565,54 @@ static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 	}
 	if (! pSPIHandle->RxLen)
 	{
-		pSPIHandle->pSPIx->CR2 &= ~( 1 << SPI_CR2_RXNEIE);
-		pSPIHandle->pRxBuffer = NULL;
-		pSPIHandle->RxLen = 0;
-		pSPIHandle->RxState= SPI_READY;
-		void SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
+		CloseReception(pSPIHandle);
+		SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_RX_CMPLT);
 	}
 
 
 }
 static void spi_ovr_err_handle(SPI_Handle_t *pSPIHandle)
 {
-	//1. Clear the ovr flag
-	//2.
 
+	//1. Clear the ovr flag
+	if(pSPIHandle->TxState != SPI_BUSY_IN_TX)
+	{
+		SPI_ClearOverFlag(pSPIHandle);
+	}
+	//2. inform the application
+	SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_OVR_ERR);
 }
+
+
+void SPI_CloseTransmisson(SPI_Handle_t *pSPIHandle)
+{
+	//Txlen is Zero , so close th spi transsmition and inform the application that
+	//TX is over
+	//This prevents interrupts from setting up of RXE Flag
+	pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE);
+	pSPIHandle->pTxBuffer= NULL; // (reset the buffer) NULL is not define , the NULL is on stndard def.h so we shall include it standared header file stm32f411xx.h.
+	pSPIHandle->TxLen= 0;
+	pSPIHandle->TxState= SPI_READY;
+}
+void SPI_CloseReception(SPI_Handle_t *pSPIHandle)
+{
+	pSPIHandle->pSPIx->CR2 &= ~( 1 << SPI_CR2_RXNEIE);
+	pSPIHandle->pRxBuffer = NULL;
+	pSPIHandle->RxLen = 0;
+	pSPIHandle->RxState= SPI_READY;
+}
+
+void SPI_ClearOverFlag(SPI_RegDef_t *pSPIx)
+{
+	volatile uint8_t dummey;
+	dummey = pSPIHandle->pSPIx->DR;
+	dummey = pSPIHandle->pSPIx->SR;
+	(void)dummey;
+}
+
+//This a weak implemntaion and apllication may ovveride this function
+// __attribute__((weak)) to do the above implemntation
+__weak void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv)
+{
+
 }

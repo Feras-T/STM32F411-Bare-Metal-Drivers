@@ -10,7 +10,9 @@
 
 #include <stddef.h>
 #include <stdint.h>   // The shorthand notations are defined in standared library file (stdint.h)
+
 #define __vo volatile
+#define __weak __attribute__((weak))
 
 /*********************************************START:Processor Specific Details********************************/
 /*
