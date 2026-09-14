@@ -30,7 +30,7 @@
 #define NVIC_PR_BASE_ADDR 	 ( (__vo uint32_t*)0xE000E400)
 
 
-#define NO_BITS_IMPLENTED		    	4  // sometimes is 3 on other microcontrollers
+#define NO_BITS_IMPLEMENTED		    	4  // sometimes is 3 on other microcontrollers
 
 
 

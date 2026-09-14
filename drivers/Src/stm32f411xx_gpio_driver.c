@@ -405,16 +405,36 @@ void GPIO_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)			// message the
 	 *
 	 *****************************************************************************/
 
+//void GPIO_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority)
+//{
+//	uint8_t iprx=IRQNumber /4;
+//	uint8_t iprx_section = IRQNumber % 4;
+//
+//	uint8_t shift_amount = (8 * iprx_section) + ( 8 - NO_BITS_IMPLENTED); //NO_BITS_IMPLENTED = 4.
+//	*(NVIC_PR_BASE_ADDR + iprx) |= (IRQPriority <<  shift_amount); //Note NVIC_PR_BASE_ADDR is defined to be 32bit
+//	// so 1 increamnt NVIC_PR_BASE_ADDR+1 mean +4byte
+//}
+
 void GPIO_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority)
 {
-	uint8_t iprx=IRQNumber /4;
-	uint8_t iprx_section = IRQNumber % 4;
+    uint8_t iprx = IRQNumber / 4;
+    uint8_t iprx_section = IRQNumber % 4;
 
-	uint8_t shift_amount = (8 * iprx_section) + ( 8 - NO_BITS_IMPLENTED);
-	*(NVIC_PR_BASE_ADDR + iprx) |= (IRQPriority <<  shift_amount);
+    uint8_t shift_amount = (8 * iprx_section) + (8 - NO_BITS_IMPLEMENTED);
+
+    volatile uint32_t *priority_reg = NVIC_PR_BASE_ADDR + iprx;
+
+    /* Clear the old four-bit priority field */
+    *priority_reg &= ~(0xF << shift_amount);
+
+    /* Write the new priority */
+    *priority_reg |=
+        ((IRQPriority & 0xF) << shift_amount);
+    //Good note, here the number used is at unsigned the 8,4,and F in hex ,
+    //but we may need to use number with U like 0xFFU at high value since
+	//Unsined int has duple range posittive bits since it just take the possitve side
+	//with sam in size
 }
-
-
 
 /******************************************************************************
  * @fn          - GPIO_PerClockControl

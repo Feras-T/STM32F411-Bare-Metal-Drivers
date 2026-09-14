@@ -18,9 +18,9 @@
  * undefined-reference error.
  */
 
-static void pi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle);
 static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle);
-static void spi_rxne_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_ovr_err_interrupt_handle(SPI_Handle_t *pSPIHandle);
 /*
  * Peripheral Clock setup
  */
@@ -321,10 +321,46 @@ void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
  * @Note        - none
  *
  *****************************************************************************/
-
 void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)			// message the intrrupt ([config]enable and give the prioraty)
 {
+	if(EnorDi == ENABLE)
+	{
 
+		if(IRQNumber <= 31)
+		{
+			//Program ISER0 register
+			*NVIC_ISER0 |= (1 << IRQNumber ); // Go TO that memory address and modify the value there
+
+		}else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			//Program ISER1 register
+			*NVIC_ISER1 |= (1 << IRQNumber % 32); // If we need to reacch bit 7 of register 1 wHich is IRQ39 so we take the Mode 32 IRQ=39%32
+
+		}
+		else if(IRQNumber >= 64 && IRQNumber <96)
+		{
+			//Program ISER2 register
+			*NVIC_ISER2 |= (1 << IRQNumber % 64);  //To reach each the ecxact bit in register 2 , its start at IRQ64
+
+		}else
+		{
+			if(IRQNumber <= 31)
+			{
+				//program ICER0 register
+				*NVIC_ICER0 |= (1 << IRQNumber );
+
+			}else if(IRQNumber > 31 && IRQNumber < 64)
+			{
+				//program ICER1 register
+				*NVIC_ICER1 |= (1 << IRQNumber % 32);
+
+			}else if(IRQNumber >= 64 && IRQNumber <96)
+			{
+				//Program ICER2 register
+				*NVIC_ICER2 |= (1 << IRQNumber % 64);
+			}
+
+		}
 }
 
 
@@ -343,63 +379,29 @@ void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)			// message the 
 	 *
 	 *****************************************************************************/
 
-void SPI_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority)
-{
-
-}
-
-
-
-
-/******************************************************************************
- * @fn          - GPIO_PerClockControl
- *
- * @brief       - This function enables and disables prehihpral clock for given GPIO port
- *
- * @param[in]   -base address of the gpio peripheral
- * @param[in]   -ENABLE or Disable macros
- * @param[in]   -
- *
- * @return      - none
- *
- * @Note        - none
- *
- *****************************************************************************/
-
-
-void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when it comes
-{
-	uint8_t temp1, temp2;
-	//first lest check for TXE
-	temp1= pHhandle->SR & (1 << SPI_SR_TXE);
-	temp2 =pHandle->pSPIx->CR2 (1 << SPI_CR2_TXEIE);
-
-	if (temp1 && temp2)
+	void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
 	{
-		//Handle TXE
-		spi_txe_interrupt_handle(pHandle);
+	    uint8_t iprx = IRQNumber / 4;
+	    uint8_t iprx_section = IRQNumber % 4;
+
+	    uint8_t shift_amount = (8 * iprx_section) + (8 - NO_BITS_IMPLEMENTED);
+
+	    volatile uint32_t *priority_reg = NVIC_PR_BASE_ADDR + iprx;
+
+	    /* Clear the old four-bit priority field */
+	    *priority_reg &= ~(0xF << shift_amount);
+
+	    /* Write the new priority */
+	    *priority_reg |=
+	        ((IRQPriority & 0xF) << shift_amount);
+	    //Good note, here the number used is at unsigned the 8,4,and F in hex ,
+	    //but we may need to use number with U like 0xFFU at high value since
+		//Unsined int has duple range posittive bits since it just take the possitve side
+		//with sam in size
 	}
 
-	//check for RXNE
-	temp1= pHhandle->SR & (1 << SPI_SR_RXNE);
-	temp2 =pHandle->pSPIx->CR2 (1 << SPI_CR2_RXNEIE);
 
-	if (temp1 && temp2)
-	{
-		//Handle RXNE
-		spi_rxne_interrupt_handle(pHandle);
-	}
-	//check for ovr flag
-	temp1= pHhandle->SR & (1 << SPI_SR_OVRE);
-	temp2 =pHandle->pSPIx->CR2 (1 << SPI_CR2_ERRIE);
 
-	if (temp1 && temp2)
-	{
-		//Handle TXE
-		spi_ovr_err_interrupt_handle(pHandle);
-	}
-
-}
 
 
 /******************************************************************************
@@ -510,6 +512,57 @@ uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t
 }
 
 
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when it comes
+{
+	uint8_t temp1, temp2;
+	//first lest check for TXE
+	temp1= pHandle->pSPIx->SR & (1 << SPI_SR_TXE);
+	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_TXEIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle TXE
+		spi_txe_interrupt_handle(pHandle);
+	}
+
+	//check for RXNE
+	temp1= pHandle->pSPIx->SR  & (1 << SPI_SR_RXNE);
+	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_RXNEIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle RXNE
+		spi_rxe_interrupt_handle(pHandle);
+	}
+	//check for ovr flag
+	temp1= pHandle->pSPIx->SR  & (1 << SPI_SR_OVR);
+	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_ERRIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle TXE
+		spi_ovr_err_interrupt_handle(pHandle);
+	}
+
+}
+
+
 //some helper function implenmention
 
 static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
@@ -524,8 +577,8 @@ static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 			//Treat pTxBuffer as a pointer to uint16_t, then dereference it
 			//and get the actual 16-bit value stored there.
 			//((uint16_t*)pTxBuffer); without the fist d+star mean go to the address of pTxBuffer pointer not the value inside the pointer.
-			pSPIHandle->TxLenL--;
-			pSPIHandle->TxLenL--;
+			pSPIHandle->TxLen--;
+			pSPIHandle->TxLen--;
 			(uint16_t*)pSPIHandle->pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
 			(uint16_t*)pSPIHandle->pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
 
@@ -534,7 +587,7 @@ static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 			//8 bits DFF
 			//1. load the data in to DR
 			pSPIx->DR = *pSPIHandle->pTxBuffer; //DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
-			pSPIHandle->TxLenL--; //one time dicrese the leangth
+			pSPIHandle->TxLen--; //one time dicrese the leangth
 			pSPIHandle->pTxBuffer++;
 
 			}
@@ -543,7 +596,7 @@ static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 		{
 			SPI_CloseTransmisson(pSPIHandle);
 			void SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
-}
+          }
 		}
 static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 {
@@ -571,7 +624,7 @@ static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle)
 
 
 }
-static void spi_ovr_err_handle(SPI_Handle_t *pSPIHandle)
+static void spi_ovr_err_interrupt_handle(SPI_Handle_t *pSPIHandle)
 {
 
 	//1. Clear the ovr flag
@@ -605,8 +658,8 @@ void SPI_CloseReception(SPI_Handle_t *pSPIHandle)
 void SPI_ClearOverFlag(SPI_RegDef_t *pSPIx)
 {
 	volatile uint8_t dummey;
-	dummey = pSPIHandle->pSPIx->DR;
-	dummey = pSPIHandle->pSPIx->SR;
+	dummey = pSPIx->DR;
+	dummey = pSPIx->SR;
 	(void)dummey;
 }
 
