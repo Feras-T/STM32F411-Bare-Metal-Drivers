@@ -308,6 +308,14 @@ typedef struct
 #define GPIOH_REG_RESET()				do{((RCC->AHB1RSTR |= ( 1 <<5) ));    (RCC->AHB1RSTR &= ~( 1 << 5));} while (0) // do [(Case1); (Case2);] while (0), it means do case1 and then case 2.
 
 
+
+/*
+ * Macros to reset SPIx peripherals
+ */
+#define SPI1_REG_RESET()    do{ (RCC->APB2RSTR |= (1 << 12)); (RCC->APB2RSTR &= ~(1 << 12)); }while(0)
+#define SPI2_REG_RESET()    do{ (RCC->APB1RSTR |= (1 << 14)); (RCC->APB1RSTR &= ~(1 << 14)); }while(0)
+#define SPI3_REG_RESET()    do{ (RCC->APB1RSTR |= (1 << 15)); (RCC->APB1RSTR &= ~(1 << 15)); }while(0)
+
 /*
  * returns port code for given GPIOx base address
  * Note://If x== GPIOA is true otherwise go and check the secound condition x== GPIOB
