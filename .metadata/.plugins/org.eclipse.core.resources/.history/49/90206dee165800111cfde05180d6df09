@@ -1,0 +1,210 @@
+/*
+ * stm32fr411re.h
+ *
+ *  Created on: May 21, 2026
+ *      Author: SV
+ */
+
+#ifndef INC_STM32F411XXH_
+#define INC_STM32F411XXH_
+
+#include <stdint.h>   // The shorthand notations are defined in standared library file (stdint.h)
+#define __vo volatile
+
+#define FLASH_BASEADDR				0x08000000U
+#define SRAM1_BASEADDR				0x20000000U
+#define ROM_BASEADDR				0x1FFF0000U
+#define SRAM						SRAM1_BASEADDR
+
+#define	PERIPH_BASEADDR						0x40000000U
+#define APB1PERIPH_BASEADDR					PERIPH_BASE
+#define APB2PERIPH_BASEADDR					0x40010000U
+#define AHB1PERIPH_BASEADDR					0x40020000U
+#define AHB2PERIPH_BASEADDR					0x50000000U
+
+/*
+ * Base addressess of peripherals wich are hanging on AHB1 bus
+ */
+
+#define GPIOA_BASEADDR				(AHB1PERIPH_BASEADDR + 0X0000) //(AHB1PERIPH+ OFFSET=0X0000)
+#define GPIOB_BASEADDR				(AHB1PERIPH_BASEADDR + 0X0400) //(AHB1PERIPH+ OFFSET=0X0400)
+#define GPIOC_BASEADDR				(AHB1PERIPH_BASEADDR + 0X0800) //(AHB1PERIPH+ OFFSET=0X0800)
+#define GPIOD_BASEADDR				(AHB1PERIPH_BASEADDR + 0X0C00) //(AHB1PERIPH+ OFFSET=0X0C00)
+#define GPIOE_BASEADDR				(AHB1PERIPH_BASEADDR + 0X1000) //(AHB1PERIPH+ OFFSET=0X1000)
+#define GPIOH_BASEADDR				(AHB1PERIPH_BASEADDR + 0X1C00) //(AHB1PERIPH+ OFFSET=0X1C00)
+#define RCC_BASEADDR				(AHB1PERIPH_BASEADDR + 0X3800) //(AHB1PERIPH+ OFFSET=0X1C00)
+
+/*
+ * Base addressess of peripherals wich are hanging on APB1 bus
+ */
+
+#define I2C1_BASEADDR				(APB1PERIPH + 5400)   //(APB1PERIPH+ OFFSET=0x5400)
+#define I2C2_BASEADDR				(APB1PERIPH + 0X1C00) //(APB1PERIPH+ OFFSET=0X5800)
+#define I2C3_BASEADDR				(APB1PERIPH + 0X5C00) //(APB1PERIPH+ OFFSET=0X5C00)
+
+#define SPI2_BASEADDR				(APB1PERIPH + 0X3800) //(APB1PERIPH+ OFFSET=0X3800)
+#define SPI3_BASEADDR				(APB1PERIPH + 0X3C00) //(APB1PERIPH+ OFFSET=0X3C00)
+
+#define USART2_BASEADDR				(APB1PERIPH + 0X4400) //(APB1PERIPH+ OFFSET=0X4400)
+
+//#define USART3_BASEADDR			(APB1PERIPH + 0X1C00) //(APB1PERIPH+ OFFSET=0X1C00)
+//#define UART4_BASEADDR			(APB1PERIPH + 0X1C00) //(APB1PERIPH+ OFFSET=0X1C00)
+//#define UART5_BASEADDR			(APB1PERIPH + 0X1C00) //(APB1PERIPH+ OFFSET=0X1C00)
+
+/*
+ * Base addressess of peripherals wich are hanging on APB2 bus
+ */
+
+#define SPI1_BASEADDR				(APB2PERIPH + 0X3000) //(APB2PERIPH+ OFFSET=0X3000)
+#define USART1_BASEADDR				(APB2PERIPH + 0X1000) //(APB2PERIPH+ OFFSET=0X1000)
+#define USART6_BASEADDR				(APB2PERIPH + 0X1400) //(APB2PERIPH+ OFFSET=0X1400)
+#define EXTI_BASEADDR				(APB2PERIPH + 0X3C00) //(APB2PERIPH+ OFFSET=0X3C00)
+#define SYSCFG_BASEADDR				(APB2PERIPH + 0X3800) //(APB2PERIPH+ OFFSET=0X3800)
+
+/*
+ * 	periphral register definition structure for GPIO
+ */
+
+typedef struct
+{
+	__vo uint32_t MODER;						//GPIO port mode register						Address offset: 0x00
+	__vo uint32_t OTYPER;					    //GPIO port output type register				Address offset: 0x04
+	__vo uint32_t OSPEEDR;						//GPIO port output speed register				Address offset: 0x08
+	__vo uint32_t PUPDR;						//GPIO port pull-up/pull-down register			Address offset: 0x0C
+	__vo uint32_t IDR;							//GPIO port input data register					Address offset: 0x10
+	__vo uint32_t ODR;							//GPIO port output data register				Address offset: 0x14
+	__vo uint32_t BSRR;							//GPIO port bit set/reset register				Address offset: 0x18
+	__vo uint32_t LCKR;							//GPIO port configuration lock register			Address offset: 0x1C		AFR[0] : GPIO alternate function low register, AFR[1] : GPIO alternate function high register
+	__vo uint32_t AFRL[2];
+}GPIO_ReDef_t;
+
+typedef struct
+{
+	__vo uint32_t CR;						// clock control register															Address offset: 0x00
+	__vo uint32_t PLLCFGR;					//RCC PLL configuration register													Address offset: 0x04
+	__vo uint32_t CFGR;						//RCC clock configuration register													Address offset: 0x08
+	__vo uint32_t CIR;						//RCC clock interrupt register														Address offset: 0x0C
+	__vo uint32_t AHB1RSTR;					//RCC AHB1 peripheral reset register												Address offset: 0x10
+	__vo uint32_t AHB2RSTR;					//RCC AHB2 peripheral reset register												Address offset: 0x14
+	uint32_t Reserved[2];
+	__vo uint32_t APB1RSTR;					//RCC APB1 peripheral reset register												Address offset: 0x20
+	__vo uint32_t APB2RSTR;					//RCC APB2 peripheral reset register												Address offset: 0x24
+	uint32_t Reserved0[2];
+	__vo uint32_t AHB1ENR;					//RCC AHB1 peripheral clock enable register											Address offset: 0x30
+	__vo uint32_t AHB2ENR;					//RCC AHB2 peripheral clock enable register											Address offset: 0x34
+	uint32_t Reserved1[2];
+	__vo uint32_t APB1ENR;					//RCC APB1 peripheral clock enable register											Address offset: 0x40
+	__vo uint32_t APB2ENR;					//RCC APB2 peripheral clock enable register											Address offset: 0x44
+	uint32_t Reserved2[2];
+	__vo uint32_t AHB1LPENR;				//RCC AHB1 peripheral clock enable in low power mode register						Address offset: 0x50
+	__vo uint32_t AHB2LPENR;				//RCC AHB2 peripheral clock enable in low power mode register						Address offset: 0x54
+	uint32_t Reserved3[2];
+	__vo uint32_t APB1LPENR;				//RCC APB1 peripheral clock enable in low power mode register						Address offset: 0x60
+	__vo uint32_t APB2LPENR;				//RCC APB2 peripheral clock enabled in low power mode register						Address offset: 0x64
+	uint32_t Reserved4[2];
+	__vo uint32_t BDCR;						//RCC Backup domain control register												Address offset: 0x70
+	__vo uint32_t CSR;						//RCC clock control & status register												Address offset: 0x74
+	uint32_t Reserved5[2];
+	__vo uint32_t SSCGR;					//RCC spread spectrum clock generation register										Address offset: 0x80
+	__vo uint32_t PLLI2SCFGR;				//RCC PLLI2S configuration register													Address offset: 0x84
+	__vo uint32_t DCKCFGR;					//RCC Dedicated Clocks Configuration Register										Address offset: 0x8C
+
+}RCC_ReDef_t;
+
+/*
+ * 	periphral  definition structure ( priphral base address typecasted to xxx_ReDef_t)
+ */
+
+#define GPIOA				((GPIO_ReDef_t*)GPIOA_BASEADDR)
+#define GPIOB				((GPIO_ReDef_t*)GPIOB_BASEADDR)
+#define GPIOC				((GPIO_ReDef_t*)GPIOC_BASEADDR)
+#define GPIOD				((GPIO_ReDef_t*)GPIOD_BASEADDR)
+#define GPIOE				((GPIO_ReDef_t*)GPIOE_BASEADDR)
+#define GPIOH				((GPIO_ReDef_t*)GPIOH_BASEADDR)
+
+#define RCC 				((RCC_ReDef_t*)RCC_BASEADDR)
+
+/*
+ * Clock Enable Macros for GPIOX prehihrals
+ */
+
+#define GPIOA_PCLK_EN()		(RCC->AHB1ENR |= (1 <<0) )			//To write afunction in macros you have to add (), GPIOA_PCLK_EN()= GPIOA_PERI_CLOCK_ENABLE()
+#define GPIOB_PCLK_EN()		(RCC->AHB1ENR |= (1 <<1) )
+#define GPIOC_PCLK_EN()		(RCC->AHB1ENR |= (1 <<2) )
+#define GPIOD_PCLK_EN()		(RCC->AHB1ENR |= (1 <<3) )
+#define GPIOE_PCLK_EN()		(RCC->AHB1ENR |= (1 <<4) )
+#define GPIOH_PCLK_EN()		(RCC->AHB1ENR |= (1 <<7) )
+
+/*
+ * Clock Enable Macros for I2Cx prehihrals
+ */
+
+#define I2C1_PCLK_EN()		(RCC->APB1ENR |= (1 <<21) )
+#define I2C2_PCLK_EN()		(RCC->APB1ENR |= (1 <<22) )
+#define I2C3_PCLK_EN()		(RCC->APB1ENR |= (1 <<23) )
+/*
+ * Clock Enable Macros for SPIx prehihrals
+ */
+
+#define SPI1_PCLK_EN()		(RCC->APB2ENR |= (1 <<12) )
+#define SPI2_PCLK_EN()		(RCC->APB1ENR |= (1 <<14) )
+#define SPI3_PCLK_EN()		(RCC->APB1ENR |= (1 <<15) )
+
+/*
+ * Clock Enable Macros for USARTx prehihrals
+ */
+#define UXART1_PCLK_EN()		(RCC->APB2ENR |= (1 <<4) )
+#define UXART2_PCLK_EN()		(RCC->APB1ENR |= (1 <<17) )
+#define UXART6_PCLK_EN()		(RCC->APB2ENR |= (1 <<5) )
+
+/*
+ * Clock Enable Macros for SYCFGx prehihrals
+ */
+#define SYCFGx_PCLK_EN()		(RCC->APB2ENR |= (1 <<14) )
+
+/*
+ * Clock Disable Macros for GPIOx prehihrals
+ */
+
+#define GPIOA_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<0) )			//To write afunction in macros you have to add (), GPIOA_PCLK_EN()= GPIOA_PERI_CLOCK_ENABLE()
+#define GPIOB_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<1) )
+#define GPIOC_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<2) )
+#define GPIOD_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<3) )
+#define GPIOE_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<4) )
+#define GPIOH_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<7) )
+
+/*
+ * Clock Disable Macros for GPIOx prehihrals
+ */
+
+#define I2C1_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<21) )
+#define I2C2_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<22) )
+#define I2C3_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<23) )
+
+/*
+ * Clock Disable Macros for SPIx prehihrals
+ */
+
+#define SPI1_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<12) )
+#define SPI2_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<14) )
+#define SPI3_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<15) )
+
+/*
+ * Clock Disable Macros for USARTx prehihrals
+ */
+
+#define UXART1_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<4) )
+#define UXART2_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<17) )
+#define UXART6_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<5) )
+
+/*
+ * Clock Disable Macros for SYCFGx prehihrals
+ */
+
+#define SYCFGx_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<14) )
+
+
+#endif /* INC_STM32F411XXH_ */
+
+
+

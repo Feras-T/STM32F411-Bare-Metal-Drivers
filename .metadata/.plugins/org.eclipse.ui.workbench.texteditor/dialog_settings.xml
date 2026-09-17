@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<item key="hasShownOverlayPopupBefore" value="true"/>
+	<item key="replaceBarOpen" value="true"/>
+	<list key="searchhistory">
+		<item value="SPI_IRQPriorityConfig"/>
+		<item value="pTxBuffer"/>
+		<item value="spi_txe_interrupt_handle"/>
+		<item value="TxLenL"/>
+		<item value="pSPIx-&gt;DR"/>
+		<item value="spi_rxe_interrupt_handle"/>
+		<item value="spi_rx_interrupt_handle"/>
+		<item value="spi_ovr_err"/>
+		<item value="SPI_SR_TXE"/>
+		<item value="GPIOInit"/>
+		<item value="SPI_SR_BSY"/>
+		<item value="SPI_RegDef_t"/>
+		<item value="pGPIOx"/>
+		<item value="pSPIx"/>
+		<item value="GPIO_RegDef_t"/>
+	</list>
+	<list key="replacehistory">
+		<item value="PinNumber"/>
+	</list>
+</section>

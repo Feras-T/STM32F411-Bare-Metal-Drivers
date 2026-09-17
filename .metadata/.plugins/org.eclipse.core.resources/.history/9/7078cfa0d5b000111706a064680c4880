@@ -1,0 +1,675 @@
+/*
+ * stm32f411xx_spi_driver.c
+ *
+ *  Created on: Jul 4, 2026
+ *      Author: SV
+ */
+
+
+#include "stm32f11xx_spi_driver.h"
+
+/*
+ * These are private helper functions, so we define them in the SPI.c file.
+ *
+ * The static keyword gives them internal linkage, meaning they can only
+ * be called from within this SPI.c file.
+ *
+ * If another source file tries to call them, the linker will report an
+ * undefined-reference error.
+ */
+
+static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle);
+static void spi_ovr_err_interrupt_handle(SPI_Handle_t *pSPIHandle);
+/*
+ * Peripheral Clock setup
+ */
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+void SPI_PeriClockControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+
+ {
+	if(EnorDi == ENABLE)
+	{
+		if(pSPIx == SPI1)
+		{
+			SPI1_PCLK_EN();
+		}else if (pSPIx == SPI2)
+		{
+			SPI2_PCLK_EN();
+		}else if (pSPIx== SPI3)
+		{
+			SPI3_PCLK_EN();
+
+	}else
+	{
+		if(pSPIx == SPI1)
+		{
+			SPI1_PCLK_DI();
+		}else if (pSPIx == SPI2)
+		{
+			SPI2_PCLK_DI();
+		}else if (pSPIx== SPI3)
+		{
+			SPI3_PCLK_DI();
+		}
+
+}
+}
+ }
+
+/*
+ * Init and De-init
+ */
+void SPI_Init(SPI_Handle_t *pSPIHandle)  // (void), the parameters will be written later
+{
+
+	SPI_PeriClockControl(pSPIHandle->pSPIx, ENABLE);
+
+	uint32_t tempreg =0;
+
+	//Peripheral clock  enable
+
+
+	//1. configure the device mode
+	//Decive control wherthere to be master or slave
+	tempreg |= pSPIHandle->SPIConfig.SPI_DeviceMode <<SPI_CR1_MSTR ; //SPI_CR1 Bit2
+
+	//2.configure the bus config
+	//At full duplex
+
+	if(pSPIHandle->SPIConfig.SPI_BusConfig == SPI_BUS_CONFIG_FD)
+	{
+		//bidi shall be cleared
+		tempreg &=~(1<<SPI_CR1_BIDIMODE);  //bidi SPI_CR1 control bit 15
+	}else if (pSPIHandle->SPIConfig.SPI_BusConfig == SPI_BUS_CONFIG_HD)
+	{
+		//bidi shall be set
+		tempreg |= (1<<SPI_CR1_BIDIMODE);
+	}else if (pSPIHandle->SPIConfig.SPI_BusConfig == SPI_BUS_CONFIG_HD)
+	{
+		//bidi shall be cleared
+		tempreg &=~(1<<SPI_CR1_BIDIMODE);
+		//RXONLY bit must be set
+		tempreg |= (1 <<SPI_CR1_RXONLY); // RX only SPI_CR1 control bit 10
+	}
+
+	// 3. Configure the spi serial Clock speed (baud rate)
+	tempreg |= pSPIHandle->SPIConfig.SPI_SclkSpeed <<3 ;
+
+	// 4. Configure the spi serial Clock speed (baud rate)
+	tempreg |= pSPIHandle->SPIConfig.SPI_DFF << 11 ;
+
+	// 5. Configure the spi serial Clock speed (baud rate)
+	tempreg |= pSPIHandle->SPIConfig.SPI_CPOL <<1 ;
+
+	// 6. Configure the spi serial Clock speed (baud rate)
+	tempreg |= pSPIHandle->SPIConfig.SPI_CPHA <<0 ;
+
+	tempreg |= pSPIHandle->SPIConfig.SPI_SSM << SPI_CR1_SSM;
+
+
+	pSPIHandle ->pSPIx->CR1 =tempreg;
+
+
+
+	}
+
+
+
+
+/*
+ * Data read and write
+ */
+
+
+/*
+ * Peripheral Clock setup
+ */
+/******************************************************************************
+ * @fn          - GPIO_ReadFromInputPin
+ *
+ * @brief       -
+ *
+ * @param[in]   -
+ * @param[in]   -
+ * @param[in]   -
+ *
+ * @return      - 0 or 1
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+void SPI_DeInit(SPI_RegDef_t *pSPIx)
+{
+
+
+
+}
+
+uint8_t SPI_GETFlagStatus(SPI_RegDef_t *pSPIx , uint32_t FlagName)
+{
+	if(pSPIx->SR & FlagName) 		//if Flage name wehther it is  SPI_TXE_FLAG or any other on is
+	{
+		return FLAG_SET;
+	}
+	return FLAG_RESET;
+}
+
+
+
+
+/******************************************************************************
+ * @fn          - GPIO_writeToOutpotPort
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - This is a blocking call , the function will waite until all the bytes transfare also it will waite until TX is ready
+ *
+ *****************************************************************************/
+
+void SPI_SendData(SPI_RegDef_t *pSPIx, uint8_t *pTxBuffer, uint32_t Len) //called send data api , blocking api, we called like that because the function call wight until all the bits are transmited
+{
+	while (Len > 0)
+	{
+		//1. waite until TXE is set
+		while(SPI_GETFlagStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET);
+		// While (! (pSPIx->sr &(1 << 1); shift on by 1 bit the TXE position in sr register is the mask 1<<1 AND SR =0 and with ! it will be 1 the while will hange if not  the while will get out
+		//FLAG_RESET=0, If FlagName(SPI_TXE_FLAG) is 1 the wile will exit and code will implemnt
+		//if the FlagName(SPI_TXE_FLAG)=0 the wile will be wile(0=0) -> while(1) and will hang
+
+		//2. check the DFF bit in CR1
+		if (pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits., make mask with SPI_CR1_DFF and And it with CR1 to check whether 16bit is enabeled or not
+		{
+			//16 bits DFF
+			//1. load the data in to DR
+			pSPIx->DR = *((uint16_t*)pTxBuffer); //DR, Data register,*pTxBuffer Go to address 0x20000100 and give me the value stored there.
+			//First star mean go to than pointer and give me it value , the uint16_t* mean
+			//Treat pTxBuffer as a pointer to uint16_t, then dereference it
+			//and get the actual 16-bit value stored there.
+			//((uint16_t*)pTxBuffer); without the fist d+star mean go to the address of pTxBuffer pointer not the value inside the pointer.
+			Len--;
+			Len--;
+			pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+			pTxBuffer++;
+
+		}else
+			{
+			//8 bits DFF
+			//1. load the data in to DR
+			pSPIx->DR = *pTxBuffer; //DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
+			Len--; //one time dicrese the leangth
+			pTxBuffer++;
+
+			}
+
+	}
+
+}
+
+
+/******************************************************************************
+ * @fn          - GPIO_ToggleOutputPin
+ *
+ * @brief       -
+ * @param[in]   -
+ * @param[in]   -
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
+{
+	//1. waite until RXE is set
+		while(SPI_GETFlagStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET);
+
+
+		//2. check the DFF bit in CR1
+		if (pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits., make mask with SPI_CR1_DFF and And it with CR1 to check whether 16bit is enabeled or not
+		{
+			//16 bits DFF
+			//1. load the data From Dr to pRxBuffer
+			*((uint16_t*)pRxBuffer)=pSPIx->DR; //Know we have to read from DR , Data register
+
+			Len--;
+			Len--;
+			(uint16_t*)pRxBuffer++; // (uint16_t*) to incremnt pointer by 2
+
+		}else
+			{
+			//8 bits DFF
+			//1. load the data in to DR
+			*(pRxBuffer)=pSPIx->DR;//DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
+			Len--; //one time dicrese the leangth
+			pRxBuffer++;
+
+			}
+
+	}
+
+
+
+
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_PeripheralControl(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+	if(EnorDi == ENABLE)
+	{
+		pSPIx->CR1 |= (1 << SPI_CR1_SPE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+	}else
+	{
+		pSPIx->CR1 &= ~(1 << SPI_CR1_SPE);
+	}
+}
+
+
+/*
+ * IRQ Configuration and ISR Handling
+ */
+
+
+/******************************************************************************
+ * @fn          - GPIO_IRQConfig
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+void SPI_IRQInterruptConfig(uint8_t IRQNumber, uint8_t EnorDi)			// message the intrrupt ([config]enable and give the prioraty)
+{
+	if(EnorDi == ENABLE)
+	{
+
+		if(IRQNumber <= 31)
+		{
+			//Program ISER0 register
+			*NVIC_ISER0 |= (1 << IRQNumber ); // Go TO that memory address and modify the value there
+
+		}else if(IRQNumber > 31 && IRQNumber < 64)
+		{
+			//Program ISER1 register
+			*NVIC_ISER1 |= (1 << IRQNumber % 32); // If we need to reacch bit 7 of register 1 wHich is IRQ39 so we take the Mode 32 IRQ=39%32
+
+		}
+		else if(IRQNumber >= 64 && IRQNumber <96)
+		{
+			//Program ISER2 register
+			*NVIC_ISER2 |= (1 << IRQNumber % 64);  //To reach each the ecxact bit in register 2 , its start at IRQ64
+
+		}else
+		{
+			if(IRQNumber <= 31)
+			{
+				//program ICER0 register
+				*NVIC_ICER0 |= (1 << IRQNumber );
+
+			}else if(IRQNumber > 31 && IRQNumber < 64)
+			{
+				//program ICER1 register
+				*NVIC_ICER1 |= (1 << IRQNumber % 32);
+
+			}else if(IRQNumber >= 64 && IRQNumber <96)
+			{
+				//Program ICER2 register
+				*NVIC_ICER2 |= (1 << IRQNumber % 64);
+			}
+
+		}
+}
+
+
+	/******************************************************************************
+	 * @fn          - GPIO_PerClockControl
+	 *
+	 * @brief       - This function enables and disables prehihpral clock for given GPIO port
+	 *
+	 * @param[in]   -base address of the gpio peripheral
+	 * @param[in]   -ENABLE or Disable macros
+	 * @param[in]   -
+	 *
+	 * @return      - none
+	 *
+	 * @Note        - none
+	 *
+	 *****************************************************************************/
+
+	void SPI_IRQPriorityConfig(uint8_t IRQNumber, uint32_t IRQPriority)
+	{
+	    uint8_t iprx = IRQNumber / 4;
+	    uint8_t iprx_section = IRQNumber % 4;
+
+	    uint8_t shift_amount = (8 * iprx_section) + (8 - NO_BITS_IMPLEMENTED);
+
+	    volatile uint32_t *priority_reg = NVIC_PR_BASE_ADDR + iprx;
+
+	    /* Clear the old four-bit priority field */
+	    *priority_reg &= ~(0xF << shift_amount);
+
+	    /* Write the new priority */
+	    *priority_reg |=
+	        ((IRQPriority & 0xF) << shift_amount);
+	    //Good note, here the number used is at unsigned the 8,4,and F in hex ,
+	    //but we may need to use number with U like 0xFFU at high value since
+		//Unsined int has duple range posittive bits since it just take the possitve side
+		//with sam in size
+	}
+
+
+
+
+
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+
+
+		if(EnorDi == ENABLE)
+		{
+			pSPIx->CR1 |= (1 << SPI_CR1_SSI);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+		}else
+		{
+			pSPIx->CR1 &= ~(1 << SPI_CR1_SSI);
+		}
+
+}
+
+/******************************************************************************
+ * @fn          - SPI_SSOEConfig
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+
+void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
+{
+
+		if(EnorDi == ENABLE)
+		{
+			pSPIx->CR2 |= (1 << SPI_CR2_SSOE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+		}else
+		{
+			pSPIx->CR2 &= ~(1 << SPI_CR2_SSOE);
+		}
+
+}
+
+
+uint8_t SPI_SendDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pTxBuffer, uint8_t Len)
+{
+	uint8_t state =pSPIHandle->TxState;
+
+	if(state != SPI_BUSY_IN_TX)
+	{
+    // 1. Save the TX buffer address and length information
+    //    in global variables.
+	pSPIHandle->pTxBuffer =pTxBuffer;
+	pSPIHandle->TxLen= Len;
+    // 2. Mark the SPI state as busy in transmission so that
+    //    no other code can take over the same SPI peripheral
+    //    until transmission is complete.
+	pSPIHandle->TxState =SPI_BUSY_IN_TX;
+    // 3. Enable the TXEIE control bit to generate an interrupt
+    //    whenever the TXE flag is set in the status register.
+	pSPIHandle->pSPIx->CR2 |= (1 << SPI_CR2_TXEIE);
+    // 4. Data transmission will be handled by the ISR code,
+    //    which will be implemented later.
+	}
+	return state;
+}
+
+uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t Len)
+{
+	uint8_t state =pSPIHandle->RxState; //RxState will get its value
+
+	if(state != SPI_BUSY_IN_RX)
+	{
+    // 1. Save the TX buffer address and length information
+    //    in global variables.
+	pSPIHandle->pRxBuffer =pRxBuffer;
+	pSPIHandle->RxLen= Len;
+    // 2. Mark the SPI state as busy in transmission so that
+    //    no other code can take over the same SPI peripheral
+    //    until transmission is complete.
+	pSPIHandle->RxState =SPI_BUSY_IN_RX;
+    // 3. Enable the TXEIE control bit to generate an interrupt
+    //    whenever the TXE flag is set in the status register.
+	pSPIHandle->pSPIx->CR2 |= (1 << SPI_CR2_RXNEIE);
+    // 4. Data transmission will be handled by the ISR code,
+    //    which will be implemented later.
+	}
+	return state; // WHY Return status , for what?
+}
+
+
+/******************************************************************************
+ * @fn          - GPIO_PerClockControl
+ *
+ * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ *
+ * @param[in]   -base address of the gpio peripheral
+ * @param[in]   -ENABLE or Disable macros
+ * @param[in]   -
+ *
+ * @return      - none
+ *
+ * @Note        - none
+ *
+ *****************************************************************************/
+
+
+void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when it comes
+{
+	uint8_t temp1, temp2;
+	//first lest check for TXE
+	temp1= pHandle->pSPIx->SR & (1 << SPI_SR_TXE);
+	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_TXEIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle TXE
+		spi_txe_interrupt_handle(pHandle);
+	}
+
+	//check for RXNE
+	temp1= pHandle->pSPIx->SR  & (1 << SPI_SR_RXNE);
+	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_RXNEIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle RXNE
+		spi_rxe_interrupt_handle(pHandle);
+	}
+	//check for ovr flag
+	temp1= pHandle->pSPIx->SR  & (1 << SPI_SR_OVR);
+	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_ERRIE);
+
+	if (temp1 && temp2)
+	{
+		//Handle TXE
+		spi_ovr_err_interrupt_handle(pHandle);
+	}
+
+}
+
+
+//some helper function implenmention
+
+static void spi_txe_interrupt_handle(SPI_Handle_t *pSPIHandle)
+{
+
+		if (pSPIHandle->pSPIx-> CR1 & ( 1<< SPI_CR1_DFF)) // the 11th bit in CR1 regiater which is DFF if 1 mean 16 bit and if 0 mean 8 bits., make mask with SPI_CR1_DFF and And it with CR1 to check whether 16bit is enabeled or not
+		{
+			//16 bits DFF
+			//1. load the data in to DR
+			pSPIHandle->pSPIx->DR = *((uint16_t*)pSPIHandle->pTxBuffer); //DR, Data register,*pTxBuffer Go to address 0x20000100 and give me the value stored there.
+			//First star mean go to than pointer and give me it value , the uint16_t* mean
+			//Treat pTxBuffer as a pointer to uint16_t, then dereference it
+			//and get the actual 16-bit value stored there.
+			//((uint16_t*)pTxBuffer); without the fist d+star mean go to the address of pTxBuffer pointer not the value inside the pointer.
+			pSPIHandle->TxLen--;
+			pSPIHandle->TxLen--;
+			pSPIHandle->pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+			pSPIHandle->pTxBuffer++; // (uint16_t*) to incremnt pointer by 2
+
+		}else
+			{
+			//8 bits DFF
+			//1. load the data in to DR
+			pSPIHandle->pSPIx->DR = *pSPIHandle->pTxBuffer; //DR, Data register, its by defult in this function uint8_t so no need (uint16_t*)
+			pSPIHandle->TxLen--; //one time dicrese the leangth
+			pSPIHandle->pTxBuffer++;
+
+			}
+
+		if (! pSPIHandle->pTxLen)
+		{
+			SPI_CloseTransmisson(pSPIHandle);
+			SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_TX_CMPLT);
+          }
+		}
+static void spi_rxe_interrupt_handle(SPI_Handle_t *pSPIHandle)
+{
+	if(pSPIHandle->pSPIx->CR1 & (1 << SPI_CR1_DFF))
+	{
+		//Red the lin from right to left
+		// read 16 bit from DR and save it in the value that pRxbuffer is refering to and save 16 bit
+		*((uint16_t*)pSPIHandle->pRxBuffer) = (uint16_t) pSPIHandle->pSPIx->DR;
+		pSPIHandle->RxLen -=2; //which is equivent to RxLen--; RxLen--;
+		pSPIHandle->pRxBuffer++;
+		pSPIHandle->pRxBuffer++;
+	}else
+	{
+		//8 bit
+		*(pSPIHandle->pRxBuffer) =(uint8_t) pSPIHandle->pSPIx->DR;
+		pSPIHandle->RxLen -=2;
+		pSPIHandle->pRxBuffer--;
+
+	}
+	if (! pSPIHandle->RxLen)
+	{
+		CloseReception(pSPIHandle);
+		SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_RX_CMPLT);
+	}
+
+
+}
+static void spi_ovr_err_interrupt_handle(SPI_Handle_t *pSPIHandle)
+{
+	uint8_t temp;
+	//1. Clear the ovr flag
+	if(pSPIHandle->TxState != SPI_BUSY_IN_TX)
+	{
+		temp= pSPIHandle->pSPIx->DR;
+		temp= pSPIHandle->pSPIx->SR;
+
+
+	}
+	void(temp);
+	//2. inform the application
+	SPI_ApplicationEventCallback(pSPIHandle, SPI_EVENT_OVR_ERR);
+}
+
+
+void SPI_CloseTransmisson(SPI_Handle_t *pSPIHandle)
+{
+	//Txlen is Zero , so close th spi transsmition and inform the application that
+	//TX is over
+	//This prevents interrupts from setting up of RXE Flag
+	pSPIHandle->pSPIx->CR2 &= ~(1 << SPI_CR2_TXEIE);
+	pSPIHandle->pTxBuffer= NULL; // (reset the buffer) NULL is not define , the NULL is on stndard def.h so we shall include it standared header file stm32f411xx.h.
+	pSPIHandle->TxLen= 0;
+	pSPIHandle->TxState= SPI_READY;
+}
+void SPI_CloseReception(SPI_Handle_t *pSPIHandle)
+{
+	pSPIHandle->pSPIx->CR2 &= ~( 1 << SPI_CR2_RXNEIE);
+	pSPIHandle->pRxBuffer = NULL;
+	pSPIHandle->RxLen = 0;
+	pSPIHandle->RxState= SPI_READY;
+}
+
+void SPI_ClearOverFlag(SPI_RegDef_t *pSPIx)
+{
+	volatile uint8_t dummey;
+	dummey = pSPIx->DR;
+	dummey = pSPIx->SR;
+	(void)dummey;
+}
+
+//This a weak implemntaion and apllication may ovveride this function
+// __attribute__((weak)) to do the above implemntation
+__weak void SPI_ApplicationEventCallback(SPI_Handle_t *pSPIHandle, uint8_t AppEv)
+{
+
+}
