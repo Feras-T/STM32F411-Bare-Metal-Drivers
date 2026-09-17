@@ -2,7 +2,10 @@
  * stm32fr411re.h
  *
  *  Created on: May 21, 2026
- *      Author: SV
+ *      Author: Eng. Fersa Abuhaimed.
+ *      **************************************************************
+ *      (Note/ The using data sheet rm0383 and include with repository)
+ *      **************************************************************
  */
 
 #ifndef INC_STM32F411XXH_
@@ -56,7 +59,7 @@
 #define AHB2PERIPH_BASEADDR					0x50000000U
 
 /*
- * Base addressess of peripherals wich are hanging on AHB1 bus
+ * Base address of peripherals which are hanging on AHB1 bus
  */
 
 #define GPIOA_BASEADDR				(AHB1PERIPH_BASEADDR + 0X0000) //(AHB1PERIPH+ OFFSET=0X0000)
@@ -68,7 +71,7 @@
 #define RCC_BASEADDR				(AHB1PERIPH_BASEADDR + 0X3800) //(AHB1PERIPH+ OFFSET=0X1C00)
 
 /*
- * Base addressess of peripherals wich are hanging on APB1 bus
+ * Base address of peripherals which are hanging on APB1 bus
  */
 
 #define I2C1_BASEADDR				(APB1PERIPH_BASEADDR + 0ء5400)   //(APB1PERIPH+ OFFSET=0x5400)
@@ -85,7 +88,7 @@
 //#define UART5_BASEADDR			(APB1PERIPH + 0X1C00) //(APB1PERIPH+ OFFSET=0X1C00)
 
 /*
- * Base addressess of peripherals wich are hanging on APB2 bus
+ * Base address of peripherals which are hanging on APB2 bus
  */
 
 #define SPI1_BASEADDR				(APB2PERIPH_BASEADDR + 0X3000) //(APB2PERIPH+ OFFSET=0X3000)
@@ -146,7 +149,7 @@ typedef struct
 }RCC_RegDef_t;
 
 /*
- * peripheral register definition stucture for SPI
+ * peripheral register definition structure for SPI
  */
 typedef struct
 {
@@ -163,11 +166,11 @@ typedef struct
 }SPI_RegDef_t;
 
 /*
- * 	periphral  definition structure ( priphral base address typecasted to xxx_ReDef_t)
+ * 	peripheral  definition structure ( peripheral base address type casted to xxx_ReDef_t)
  */
 
 /*
- *  periheral register structure for EXTI
+ *  peripheral register structure for EXTI
  */
 
 typedef struct
@@ -182,7 +185,7 @@ typedef struct
 }EXTI_RegDef_t;
 
 /*
- * periphral register definition structure for SYSCFG
+ * peripheral register definition structure for SYSCFG
  */
 
 typedef struct
@@ -196,7 +199,8 @@ typedef struct
 }SYSCFG_RegDef_t;
 
 /*
- * Preiphral definitions ( Peripheral base addresses typecasted to xx_RegDef_t)
+ * peripheral definitions ( Peripheral base addresses type casted to xx_RegDef_t)
+ * Treat GPIOx_BASEADDR as the address of a GPIO_RegDef_t structure.
  */
 
 #define GPIOA				((GPIO_RegDef_t*)GPIOA_BASEADDR)
@@ -215,45 +219,46 @@ typedef struct
 #define SPI3				((SPI_RegDef_t*)SPI3_BASEADDR)
 
 /*
- * Clock Enable Macros for GPIOX prehihrals
+ * Clock Enable Macros for GPIOX peripherals (Page 118).
  */
 
-#define GPIOA_PCLK_EN()		(RCC->AHB1ENR |= (1 <<0) )			//To write afunction in macros you have to add (), GPIOA_PCLK_EN()= GPIOA_PERI_CLOCK_ENABLE()
-#define GPIOB_PCLK_EN()		(RCC->AHB1ENR |= (1 <<1) )			// rcc its is a pointer because its cast to as a pointer for rcc_baseadder to rcc_regdef struct thats what ((RCC_RegDef_t*)RCC_BASEADDR) mean
+#define GPIOA_PCLK_EN()		(RCC->AHB1ENR |= (1 <<0) )			//To write a function in macros you have to add (), GPIOA_PCLK_EN()= GPIOA_PERI_CLOCK_ENABLE()
+#define GPIOB_PCLK_EN()		(RCC->AHB1ENR |= (1 <<1) )			// RCC its is a pointer because its cast to as a pointer for rcc_baseadder to rcc_regdef struct thats what ((RCC_RegDef_t*)RCC_BASEADDR) mean
 #define GPIOC_PCLK_EN()		(RCC->AHB1ENR |= (1 <<2) )
 #define GPIOD_PCLK_EN()		(RCC->AHB1ENR |= (1 <<3) )
 #define GPIOE_PCLK_EN()		(RCC->AHB1ENR |= (1 <<4) )
 #define GPIOH_PCLK_EN()		(RCC->AHB1ENR |= (1 <<7) )
 
 /*
- * Clock Enable Macros for I2Cx prehihrals
+ * Clock Enable Macros for I2Cx peripherals (page 119).
  */
 
 #define I2C1_PCLK_EN()		(RCC->APB1ENR |= (1 <<21) )
 #define I2C2_PCLK_EN()		(RCC->APB1ENR |= (1 <<22) )
 #define I2C3_PCLK_EN()		(RCC->APB1ENR |= (1 <<23) )
 /*
- * Clock Enable Macros for SPIx prehihrals
+ * Clock Enable Macros for SPIx peripherals (Page 119,122).
  */
 
 #define SPI1_PCLK_EN()		(RCC->APB2ENR |= (1 <<12) )
 #define SPI2_PCLK_EN()		(RCC->APB1ENR |= (1 <<14) )
 #define SPI3_PCLK_EN()		(RCC->APB1ENR |= (1 <<15) )
+#define SPI4_PCLK_EN()		(RCC->APB2ENR |= (1 <<13) )
 
 /*
- * Clock Enable Macros for USARTx prehihrals
+ * Clock Enable Macros for USARTx peripherals (Page 119,122).
  */
 #define UXART1_PCLK_EN()		(RCC->APB2ENR |= (1 <<4) )
 #define UXART2_PCLK_EN()		(RCC->APB1ENR |= (1 <<17) )
 #define UXART6_PCLK_EN()		(RCC->APB2ENR |= (1 <<5) )
 
 /*
- * Clock Enable Macros for SYCFGx prehihrals
+ * Clock Enable Macros for SYCFGx peripherals (Page 122).
  */
 #define SYSCFG_PCLK_EN()		(RCC->APB2ENR |= (1 <<14) )
 
 /*
- * Clock Disable Macros for GPIOx prehihrals
+ * Clock Disable Macros for GPIOx peripherals (Page 118).
  */
 
 #define GPIOA_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<0) )			//To write afunction in macros you have to add (), GPIOA_PCLK_EN()= GPIOA_PERI_CLOCK_ENABLE()
@@ -264,7 +269,7 @@ typedef struct
 #define GPIOH_PCLK_DI()		(RCC->AHB1ENR &= ~(1 <<7) )
 
 /*
- * Clock Disable Macros for GPIOx prehihrals
+ * Clock Disable Macros for GPIOx peripherals (page 119).
  */
 
 #define I2C1_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<21) )
@@ -272,7 +277,7 @@ typedef struct
 #define I2C3_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<23) )
 
 /*
- * Clock Disable Macros for SPIx prehihrals
+ * Clock Disable Macros for SPIx peripherals (Page 119,122).
  */
 
 #define SPI1_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<12) )
@@ -280,7 +285,7 @@ typedef struct
 #define SPI3_PCLK_DI()		(RCC->APB1ENR &= ~(1 <<15) )
 
 /*
- * Clock Disable Macros for USARTx prehihrals
+ * Clock Disable Macros for USARTx peripherals (Page 119,122).
  */
 
 #define UXART1_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<4) )
@@ -288,7 +293,7 @@ typedef struct
 #define UXART6_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<5) )
 
 /*
- * Clock Disable Macros for SYSCFG prehihrals
+ * Clock Disable Macros for peripherals (Page 122).
  */
 
 #define SYSCFG_PCLK_DI()		(RCC->APB2ENR &= ~(1 <<14) )
@@ -297,7 +302,7 @@ typedef struct
 /*
  * Macros to reset GPIOx peripherals
  * RCC AHB1 peripheral reset register (RCC_AHB1RSTR)
- * The main Goal of RCC_AHB1RSTR is to resert all the register of a specific PORT
+ * The main Goal of RCC_AHB1RSTR is to reset all the register of a specific PORT (page 112).
  */
 
 #define GPIOA_REG_RESET()				do{((RCC->AHB1RSTR |= ( 1 <<0) ));    (RCC->AHB1RSTR &= ~( 1 << 0));} while (0) // do [(Case1); (Case2);] while (0), it means do case1 and then case 2.
@@ -310,15 +315,15 @@ typedef struct
 
 
 /*
- * Macros to reset SPIx peripherals
+ * Macros to reset SPIx peripherals (Page 114,116).
  */
 #define SPI1_REG_RESET()    do{ (RCC->APB2RSTR |= (1 << 12)); (RCC->APB2RSTR &= ~(1 << 12)); }while(0)
 #define SPI2_REG_RESET()    do{ (RCC->APB1RSTR |= (1 << 14)); (RCC->APB1RSTR &= ~(1 << 14)); }while(0)
 #define SPI3_REG_RESET()    do{ (RCC->APB1RSTR |= (1 << 15)); (RCC->APB1RSTR &= ~(1 << 15)); }while(0)
 
 /*
- * returns port code for given GPIOx base address
- * Note://If x== GPIOA is true otherwise go and check the secound condition x== GPIOB
+ * Returns PORT code for given GPIOx base address
+ * Note://If x== GPIOA is true otherwise go and check the secondly condition x== GPIOB
  */
 
 #define GPIO_TO_CODE(x)		  ( (x == GPIOA)?0:\
@@ -329,8 +334,9 @@ typedef struct
 								(x == GPIOH)?5:0 )
 
 /*
- * IRQ(Interrupt Request) Numbers of STM32 MCU
- * TODO: You may have complete this list for other peripherals
+ * IRQ(Interrupt Request) Numbers of STM32 MCU.
+ * TODO: You may have complete this list for other peripherals.
+ * NIVC Table(page 204).
  */
 
 #define IRQ_NO_EXTI0        6
@@ -342,7 +348,7 @@ typedef struct
 #define IRQ_NO_EXTI15_10    40   // EXTI lines 10 to 15 share this one IRQ
 
 /*
- * Macros for all possible priority levels
+ * Macros for all possible priority levels (Page 202)
  */
 #define NVIC_IRQ_PRI0		0
 #define NVIC_IRQ_PRI1		1
@@ -363,7 +369,7 @@ typedef struct
 
 
 /*
- * some generic Macros
+ * Some generic Macros.
  */
 
 #define ENABLE			  1
@@ -379,6 +385,9 @@ typedef struct
 /*********************************************************
   *Bit position definitions of SPI peripheral
  *********************************************************/
+/*
+ * Bit position definition SPI_CR1 (Page 598).
+ */
 
 #define SPI_CR1_CPHA   		0
 #define SPI_CR1_CPOL		1
@@ -390,13 +399,13 @@ typedef struct
 #define SPI_CR1_SSM			9
 #define SPI_CR1_RXONLY		10
 #define SPI_CR1_DFF			11
-#define SPI_CR1_CRCNEXT	12
+#define SPI_CR1_CRCNEXT		12
 #define SPI_CR1_CRCEN		13
 #define SPI_CR1_BIDIOE		14
 #define SPI_CR1_BIDIMODE	15
 
 /*
- * Bit position definition SPI_CR2
+ * Bit position definition SPI_CR2 (page 600).
  */
 
 #define SPI_CR2_RXDMAE		0
@@ -409,7 +418,7 @@ typedef struct
 
 
 /*
- * Bit position definition SPI_SR (SPI_Sataus register
+ * Bit position definition SPI_SR (SPI_Sataus register) (Page 601).
  */
 
 #define SPI_SR_RXNE			0
