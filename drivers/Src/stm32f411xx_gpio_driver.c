@@ -28,9 +28,9 @@
  * @return None.
  *
  * @note   The GPIO peripheral clock must be enabled before accessing or
+ *         configuring the corresponding GPIO port registers.
  *
-/******************************************************************************
-*/
+ *****************************************************************************/
 
 void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
 {
@@ -109,7 +109,15 @@ void GPIO_Init(GPIO_Handle_t *pGPIOHandle)  // (void), the parameters will be wr
 		pGPIOHandle->pGPIOx->MODER |= temp; //setting
 
 	}else
-	{
+	{	//this is an extral Modes , but what are the input/output/analog or alternitave ?
+		//the microcontroller does not know automatically that GPIO_MODE_IT_FT means input.
+		//That meaning exists only in the driver code.
+		//Usually, this driver relies on the GPIO pin’s reset state. Most GPIO pins start with
+		//So when the code handles GPIO_MODE_IT_FT, it configures EXTI but leaves MODER unchanged.
+		//Since the pin was already an input after reset, it works.
+		//so the pin work as input and then we configure it to be an interrupt.
+		//this is for GPIO_MODE_IT_FT, GPIO_MODE_IT_RT and GPIO_MODE_IT_RFT.
+
 		if(pGPIOHandle->GPIO_PinConfig.GPIO_PinMode <= GPIO_MODE_IT_FT)
 		{
 			//1. configure the FTSR
@@ -121,9 +129,9 @@ void GPIO_Init(GPIO_Handle_t *pGPIOHandle)  // (void), the parameters will be wr
 		}else if(pGPIOHandle->GPIO_PinConfig.GPIO_PinMode <= GPIO_MODE_IT_RT)
 		{
 			//1. configure the RTSR
-			EXTI->FTSR |= (1 << pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber);
+			EXTI->RTSR |= (1 << pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber);
 			//Clear the corresponding FTSR bit
-			EXTI->RTSR &= ~(1 << pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber);
+			EXTI->FTSR &= ~(1 << pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber);
 
 		}else if(pGPIOHandle->GPIO_PinConfig.GPIO_PinMode <= GPIO_MODE_IT_RFT)
 		{
@@ -135,6 +143,7 @@ void GPIO_Init(GPIO_Handle_t *pGPIOHandle)  // (void), the parameters will be wr
 		}
 
 		//2. configure The GPIO port selection in SYSCFG_EXTICR
+		//Note/ Since the else only for interrupt modes we configure SYSCONFIG
 		uint8_t temp1= pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber /4;
 		uint8_t temp2= pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber %4;
 		uint8_t portcoed = GPIO_TO_CODE (pGPIOHandle->pGPIOx);
@@ -148,30 +157,30 @@ void GPIO_Init(GPIO_Handle_t *pGPIOHandle)  // (void), the parameters will be wr
 
 
 	temp=0;
-	//2. config the speed
+	//2. Configure the speed
 	temp= (pGPIOHandle->GPIO_PinConfig.GPIO_PinSpeed << (2 * pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber) );
 	pGPIOHandle->pGPIOx->OSPEEDR &= ~( 0x3 << (2* pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber)); //clearing
 	pGPIOHandle->pGPIOx->OSPEEDR |= temp; //setting
 
 	temp=0;
-	//3. configure the pupd settings
+	//3. Configure the pupd settings
 
 	temp= (pGPIOHandle->GPIO_PinConfig.GPIO_PinPUPdControl << (2 * pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber) );
 	pGPIOHandle->pGPIOx->PUPDR &= ~( 0x3 << (2* pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber)); //clearing
 	pGPIOHandle->pGPIOx->PUPDR |= temp; //setting
 
 	temp=0;
-	//4. configure the optype
-	//each pin need 1 bit from register so bit 0 in register from first pin secound bit for the secound pin
-	//So we dont need to mutiply by 2
+	//4. Configure the optype
+	//Each pin need 1 bit from register so bit 0 in register from first pin secound bit for the secound pin
+	//So we dont need to multiply by 2
 	temp= (pGPIOHandle->GPIO_PinConfig.GPIO_PinOPType << (pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber) );
 	pGPIOHandle->pGPIOx->OTYPER &= ~( 0x1 << pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber); //clearing
 	pGPIOHandle->pGPIOx->OTYPER |= temp; //setting
 
-	//5. configuration the alt functionality
+	//5. Configuration the Alt functionality
 	if(pGPIOHandle->GPIO_PinConfig.GPIO_PinMode == GPIO_MODE_ALTFN)
 	{
-		//configure the alt functionlity
+		//configure the Alt functionality
 		uint8_t temp1, temp2;
 		temp1= pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber /8;  // this int, from any value below 8 the result is =0 and and from 8-15 the result =1
 		temp2= pGPIOHandle->GPIO_PinConfig.GPIO_PinNumber % 8; //the remainig deside the location of pin in register ex 6%8=6 , 10%8=2
