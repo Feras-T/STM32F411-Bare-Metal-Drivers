@@ -1,30 +1,36 @@
 /*
  * stm32f411xx_gpio_driver_.c
  *
- *  Created on: May 24, 2026
- *      Author: SV
+ *
+ *      Author: Eng. Fersa Abuhaimed.
+ *      ***************************************************************
+ *      (Note/ The using data sheet rm0383 and include with repository)
+ *      ***************************************************************
  */
 
 #include "stm32f411_gpio_driver.h"
 
 
 /*
- * Peripheral Clock setup
+ * Peripheral Clock Control
  */
+
 /******************************************************************************
- * @fn          - GPIO_PerClockControl
+ * @brief  Enables or disables the peripheral clock for a specified GPIO port.
  *
- * @brief       - This function enables and disables prehihpral clock for given GPIO port
+ * @param  pGPIOx  Pointer to the GPIO peripheral register definition.
+ *                 Valid values: GPIOA, GPIOB, GPIOC, GPIOD, GPIOE, or GPIOH.
  *
- * @param[in]   -base address of the gpio peripheral
- * @param[in]   -ENABLE or Disable macros
- * @param[in]   -
+ * @param  EnorDi  Clock control option:
+ *                 - ENABLE:  Enable the GPIO peripheral clock.
+ *                 - DISABLE: Disable the GPIO peripheral clock.
  *
- * @return      - none
+ * @return None.
  *
- * @Note        - none
+ * @note   The GPIO peripheral clock must be enabled before accessing or
  *
- *****************************************************************************/
+/******************************************************************************
+*/
 
 void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
 {
@@ -83,7 +89,7 @@ void GPIO_PeriClockControl(GPIO_RegDef_t *pGPIOx, uint8_t EnorDi)
  */
 void GPIO_Init(GPIO_Handle_t *pGPIOHandle)  // (void), the parameters will be written later
 {
-	uint32_t temp=0; //temp. register
+	uint32_t temp=0; //temp, register.
 
 	//Enable The peripheral clock
 
@@ -93,7 +99,7 @@ void GPIO_Init(GPIO_Handle_t *pGPIOHandle)  // (void), the parameters will be wr
 	if(pGPIOHandle->GPIO_PinConfig.GPIO_PinMode <= GPIO_MODE_ANALOG)
 	{
 		// This if for the cases of non interrupt modes
-		//non a=intruupt are , Input, Output,Alt, Analog
+		//non intruupt are , Input, Output,Alt, Analog
 	    // <= less than or equal GPIO_MODE_ANALOG mean <= 2
 		// the ALT mode has a specific case , look at belo alt (if) case
 	    // we have to save the state of the pin input, output ... and the pin loacation PA0,PA1 ...etc

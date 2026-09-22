@@ -27,7 +27,7 @@ typedef struct
 }GPIO_PinConfig_t;
 
 /*
- * This is a Handle strucure for a GPIO pin
+ * This is a Handle structure for a GPIO pin
  */
 
 typedef struct
@@ -74,7 +74,7 @@ typedef struct
 /*
  * GPIO pin Possible modes.
  * This is main types of Pin modes (0) 00 input mode, (1) 01 output mode, (2) 10 Alternate, (3) 11 Analog mode.
- * The remianing Macros are for intrrupt
+ * The remaining Macros are for interrupt
  * GPIO port mode register (GPIOx_MODER)
  */
 
