@@ -1,31 +1,56 @@
-# STM32F411 GPIO Driver (Bare-Metal)
+# STM32F411 Bare-Metal Drivers
 
-Register-level GPIO driver for STM32F411, written without HAL/LL libraries.
+Register-level GPIO and SPI drivers for the STM32F411, written in C without STM32 HAL or LL libraries.
 
 ## Features
-- Pin mode configuration (Input / Output / Alt Function / Analog select)
-- Output type (Push-Pull / Open-Drain) and speed control
-- Pull-up/Pull-down configuration
-- Read/Write for single pins and full ports
-- External interrupt (EXTI) support with NVIC priority configuration
 
-## Architecture Decisions
-- All register access done via direct pointer casting to peripheral
-  base addresses (no vendor abstraction layer / no HAL)
-- IRQ handling separated into three stages: interrupt config,
-  priority config, and ISR handling — mirrors typical production
-  driver structure
+### GPIO
+
+- Configure pins as input, output, alternate function, or analog
+- Configure output type, speed, and pull-up/pull-down resistors
+- Configure alternate function selection through the AFR registers
+- Read and write individual pins or full ports
+- Configure external interrupts (EXTI)
+- Enable, disable, and set priorities for interrupts through the NVIC
+- Handle and clear pending GPIO interrupts
+
+### SPI
+
+- Configure the SPI peripheral, including device mode, bus configuration, clock prescaler, data frame format, CPOL, CPHA, and software slave management
+- Send and receive data using blocking functions
+- Send and receive data using interrupt-based functions
+- Handle TXE, RXNE, and overrun (OVR) interrupt events
+- Report transfer completion and errors through an application callback
+- Control the SPI peripheral, SSI, and SSOE
+- Clear the OVR flag by reading the data register followed by the status register
+
+## Architecture
+
+Peripheral registers are accessed through C register structures mapped to their hardware base addresses. The project does not use a vendor driver abstraction.
+
+GPIO pin configuration, EXTI configuration, NVIC configuration, and interrupt handling are implemented as separate operations. The SPI driver provides both blocking and interrupt-based transfer functions.
+
+## Examples
+
+The `Src/` directory contains GPIO and SPI examples, including:
+
+- LED toggle and button input
+- Button-triggered GPIO interrupt
+- SPI transmit-only communication with Arduino
+- SPI command and response handling with Arduino
+- SPI transmit and receive using interrupts with Arduino
+
+The SPI examples configure SPI1 pins on GPIOA using alternate function AF5.
+
+## Hardware
+
+- Board: STM32 NUCLEO-F411RE
+- Microcontroller: STM32F411RE
 
 ## Known Limitations
-- Alternate Function (AFR) configuration not yet implemented
-  (planned for peripheral drivers: SPI/UART/I2C pin muxing)
-- Debounce handled in application layer, not driver layer
 
-## Testing
-- LED toggle on PA8 via interrupt trigger on PA9 (button)
-- Verified interrupt priority nesting with two simultaneous EXTI lines
-- Board: STM32F411RE Nucleo
+- Button debounce is handled by the application rather than the GPIO driver.
 
-## Bug Log
-See [DEBUG_LOG.md](./DEBUG_LOG.md) for detailed debugging history.
-EOF
+## Debugging History
+
+See [DEBUG_LOG.md](./DEBUG_LOG.md) for debugging notes.
