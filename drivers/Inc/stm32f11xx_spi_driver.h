@@ -18,7 +18,7 @@
 #include "stm32f411xx.h"
 
 /*
- * Configuration structure for SPI preipheral
+ * Configuration structure for SPI peripheral.
  */
 typedef struct
 {

@@ -16,7 +16,7 @@
 typedef struct
 {
 	uint32_t I2C_SCLSpeed;
-	uint8_t  I2C_DeviceAddess; //this will be initialize by the user so no pre-modification
+	uint8_t  I2C_DeviceAddress; //this will be initialize by the user so no pre-modification
 	uint8_t  I2C_ACKControl;
 	uint8_t  I2C_FMDutyCycle;
 
@@ -57,10 +57,10 @@ typedef struct
  * Duty cycle in data sheet
  * might be 2 or 16/9 (page 499) Clock control register CCR
  * If you want duty cycle 2 (DUTY bit in CCR register) shall be    0
- * If you want Duty cycle 19/2 (DUTY bit in CCR register) shall be 1
+ * If you want Duty cycle 16/9 (DUTY bit in CCR register) shall be 1
  */
 #define I2C_FM_DUTY_2			0
-#define I2C_FM_DUTY_19_9		1
+#define I2C_FM_DUTY_16_9		1
 
 
 
