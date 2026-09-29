@@ -514,7 +514,7 @@ typedef struct
 #define I2C_SR2_PEC					8
 
 /*
- * Bit position definition I2C_SR1 (Page 499).
+ * Bit position definition I2C_CCR (Page 499).
  */
 #define I2C_CCR_CCR					0
 #define I2C_CCR_DUTY				14
