@@ -17,7 +17,9 @@
 
 #include "stm32f411xx.h"
 
-
+/*
+ * Configuration structure for SPI preipheral
+ */
 typedef struct
 {
 	uint8_t SPI_DeviceMode;
