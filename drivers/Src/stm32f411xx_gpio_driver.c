@@ -437,12 +437,14 @@ void GPIO_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority)
 
     uint8_t shift_amount = (8 * iprx_section) + (8 - NO_BITS_IMPLEMENTED);
 
+    // Declare a pointer for NVIC_PR_BASE_ADDR + iprx mean be a pionter to this adress
     volatile uint32_t *priority_reg = NVIC_PR_BASE_ADDR + iprx;
 
     /* Clear the old four-bit priority field */
     *priority_reg &= ~(0xF << shift_amount);
 
     /* Write the new priority */
+    //  *priority_reg , here write to the value stored in that register
     *priority_reg |=
         ((IRQPriority & 0xF) << shift_amount);
     //Good note, here the number used is at unsigned the 8,4,and F in hex ,

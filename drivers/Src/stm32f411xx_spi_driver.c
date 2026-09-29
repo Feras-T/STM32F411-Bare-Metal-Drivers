@@ -86,7 +86,7 @@ void SPI_Init(SPI_Handle_t *pSPIHandle)  // (void), the parameters will be writt
 
 
 	//1. configure the device mode
-	//Decive control wherthere to be master or slave
+	//Device control wethere to be master or slave
 	tempreg |= pSPIHandle->SPIConfig.SPI_DeviceMode <<SPI_CR1_MSTR ; //SPI_CR1 Bit2
 
 	//2.configure the bus config
@@ -108,19 +108,20 @@ void SPI_Init(SPI_Handle_t *pSPIHandle)  // (void), the parameters will be writt
 		tempreg |= (1 <<SPI_CR1_RXONLY); // RX only SPI_CR1 control bit 10
 	}
 
-	// 3. Configure the spi serial Clock speed (baud rate)
-	tempreg |= pSPIHandle->SPIConfig.SPI_SclkSpeed <<3 ;
+	// 3. Configure the spi
+	tempreg |= pSPIHandle->SPIConfig.SPI_SclkSpeed << SPI_CR1_BR ; //SPI_CR1 bit 3
 
-	// 4. Configure the spi serial Clock speed (baud rate)
-	tempreg |= pSPIHandle->SPIConfig.SPI_DFF << 11 ;
+	// 4. Configure the spi SPI_CR1_DFF
+	tempreg |= pSPIHandle->SPIConfig.SPI_DFF << SPI_CR1_DFF	 ; //SPI_CR1 bit 11
 
-	// 5. Configure the spi serial Clock speed (baud rate)
-	tempreg |= pSPIHandle->SPIConfig.SPI_CPOL <<1 ;
+	// 5. Configure the spi SPI_CR1_CPOL
+	tempreg |= pSPIHandle->SPIConfig.SPI_CPOL <<SPI_CR1_CPOL ;//SPI_CR1 bit 1
 
-	// 6. Configure the spi serial Clock speed (baud rate)
-	tempreg |= pSPIHandle->SPIConfig.SPI_CPHA <<0 ;
+	// 6. Configure the spi SPI_CR1_CPHA bit 0
+	tempreg |= pSPIHandle->SPIConfig.SPI_CPHA <<SPI_CR1_CPHA ; //SPI_CR1 bit 0
 
-	tempreg |= pSPIHandle->SPIConfig.SPI_SSM << SPI_CR1_SSM;
+	// 6. Configure the spi SPI_CR1_SSM
+	tempreg |= pSPIHandle->SPIConfig.SPI_SSM << SPI_CR1_SSM; //SPI_CR1 bit 9
 
 
 	pSPIHandle ->pSPIx->CR1 =tempreg;
@@ -262,7 +263,7 @@ void SPI_ReceiveData(SPI_RegDef_t *pSPIx, uint8_t *pRxBuffer, uint32_t Len)
 	while (Len > 0)
 	{
 	//1. waite until RXE is set
-		while(SPI_GETFlagStatus(pSPIx,SPI_TXE_FLAG) == FLAG_RESET);
+		while(SPI_GETFlagStatus(pSPIx,SPI_RXNE_FLAG) == FLAG_RESET);
 
 
 		//2. check the DFF bit in CR1
@@ -347,7 +348,8 @@ void SPI_SSIConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
 
 		if(EnorDi == ENABLE)
 		{
-			pSPIx->CR1 |= (1 << SPI_CR1_SSI);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+			pSPIx->CR1 |= (1 << SPI_CR1_SSI);   // if EnorDi is Enable =1 then let SSI Be one to run the SPI protocols .
+			//go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SSI =8).
 		}else
 		{
 			pSPIx->CR1 &= ~(1 << SPI_CR1_SSI);
@@ -377,7 +379,8 @@ void SPI_SSOEConfig(SPI_RegDef_t *pSPIx, uint8_t EnorDi)
 
 		if(EnorDi == ENABLE)
 		{
-			pSPIx->CR2 |= (1 << SPI_CR2_SSOE);  // if EnorDi is Enable =1 then let SPE Be one to run the SPI protocols , go to CR1 then then add 1 that shifted by 6 (which is SPI_CR1_SPE =6)
+			pSPIx->CR2 |= (1 << SPI_CR2_SSOE);  // if EnorDi is Enable =1 then let SSOE Be one to run the SPI protocols.
+			// go to CR1 then then add 1 that shifted by 6 (which is SPI_CR2_SSOE =2).
 		}else
 		{
 			pSPIx->CR2 &= ~(1 << SPI_CR2_SSOE);
@@ -554,7 +557,7 @@ uint8_t SPI_ReceiveDataIT(SPI_Handle_t *pSPIHandle, uint8_t *pRxBuffer, uint32_t
 void SPI_IRQHandling(SPI_Handle_t *pHandle)		//To prossesor that interrupt when it comes
 {
 	uint8_t temp1, temp2;
-	//first lest check for TXE
+	//first let check for TXE
 	temp1= pHandle->pSPIx->SR & (1 << SPI_SR_TXE);
 	temp2 =pHandle->pSPIx->CR2 & (1 << SPI_CR2_TXEIE);
 
