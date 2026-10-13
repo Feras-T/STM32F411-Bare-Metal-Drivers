@@ -5,7 +5,7 @@
  *      Author: SV
  */
 
-
+//This function is used to initialize the SPI1preiphral parameters
 #include <string.h>
 #include "stm32f411xx.h"
 
@@ -120,10 +120,10 @@ int main(void)
 	uint8_t dummy_read;
 
 	GPIO_ButtonInit();
-	//This function is used to initialize the GPIO pins to behave like SPI1 pins
+	//Initialize the GPIO pins to behave like SPI1 pins
 	SPI1_GPIOInit();
 
-	//This function is used to initialize the SPI1preiphral parameters
+	//Initialize the SPI1preiphral parameters
 	SPI1_Inits();
 
 
