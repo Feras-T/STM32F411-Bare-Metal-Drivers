@@ -121,11 +121,11 @@ uint32_t RCC_GetPCLK1Value(void)
 	return pclk1;
 
 }
-void I2C_Init (I2C_Handle_t *PI2CHandle)
+void I2C_Init (I2C_Handle_t *pI2CHandle)
 {
 	uint32_t tempreg =0;
 	tempreg =0;
-	tempreg |= PI2CHandle->I2C_Config.I2C_ACKControl << 10;
+	tempreg |= pI2CHandle->I2C_Config.I2C_ACKControl << 10;
 
 	//Configure the FREQ filed of CR2
 	tempreg =0;
@@ -133,7 +133,7 @@ void I2C_Init (I2C_Handle_t *PI2CHandle)
 	//FREQ is from 0 to fifth bit at CR2
 	//for saftey reason we will mask with 3F which is the bits form 0 to 5
 	// &3F = 111111
-	PI2CHandle->pI2Cx->CR2 = (tempreg & 0x3FU); // By this mask tempreg will be just in 0-5th bit
+	pI2CHandle->pI2Cx->CR2 = (tempreg & 0x3FU); // By this mask tempreg will be just in 0-5th bit
 
 	//Program the device own adress
 	//the address is save on OAR1 register At ADD
@@ -142,10 +142,47 @@ void I2C_Init (I2C_Handle_t *PI2CHandle)
 	//and ADD+ADD0 if we want to save 10bit address
 	//Here we will save it just at 7bit so we will shift by1
 	//to only take ADD without ADD0
-	tempreg = PI2CHandle-> I2C_Config.I2C_DeviceAddress <<1;
+	tempreg = pI2CHandle-> I2C_Config.I2C_DeviceAddress <<1;
+	//In OAR1 we have to code the bit , 1 mean 10 bit and zero mean 7bit and bydefault it is 0 so we will not program it.
+	//At OAR1 register it says that bit 14 shall be 1 (manifactour purpose)
+	tempreg |= (1 << 14);
+	pI2CHandle->pI2Cx->OAR1 =tempreg;
+
+	//CCR Calculation
+	//you have first to configure the mode (F/S 15th bit) at I2C_CCR register
+	//for standared mode =0 Fast mode =1;
+	// fo standred mode we dont have to pregram the bit
+	//because by default is = 0;
+	uint16_t ccr_value = 0;
+	tempreg = 0;
+	if(pI2CHandle->I2C_Config.I2C_SCLSpeed <= I2C_SCL_SPEED_SM)
+	{
+		//mode is standared mode
+		//Check the equation at the muc1 note P5 Pic 16.
+		ccr_vale= RCC_GetPCLK1Value()/ (2 *PI2CHandle->I2C_Config.I2C_SCLSpeed);
+		tempreg |= (ccr_value & 0xFFF); //we mask with the first 12 bit (at CCR REGISTE page 499.
+	}else
+	{
+		//mode is fast mode
+		//We have to modify F/S 15th bit in CCR register to be 1 (Fast Mode)
+		tempreg |= (1 <<15);
+		tempreg |= (pI2CHandle->I2C_Config.I2C_FMDutyCycle << 14);
+		if(pI2CHandle->I2C_Config.I2C_FMDutyCycle == I2C_FM_DUTY_2)
+		{
+			//Equation in note MCU1 P5 Pic 17.
+			ccr_vale= RCC_GetPCLK1Value()/ (3 *PI2CHandle->I2C_Config.I2C_SCLSpeed);
+
+		}else
+		{
+			//Equation in note MCU1 P5 Pic 17.
+			ccr_vale= RCC_GetPCLK1Value()/ (25 *PI2CHandle->I2C_Config.I2C_SCLSpeed);
+		}
+
+		tempreg |= (ccr_value & 0xFFF);
 
 
-
+	}
+	pI2CHandle->pI2Cx->CCR =tempreg;
 
 
 }
