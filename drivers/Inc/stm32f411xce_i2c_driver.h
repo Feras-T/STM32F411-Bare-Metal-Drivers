@@ -62,6 +62,21 @@ typedef struct
 #define I2C_FM_DUTY_2			0
 #define I2C_FM_DUTY_16_9		1
 
+//I2C Status register Micros (page 494)
+
+#define SPI_FLAG_TXE		(1 << I2C_SR1_TXE)
+#define SPI_FLAG_RXNE		(1 << I2C_SR1_RXNE)
+#define I2C_FLAG_SB			(1 << I2C_SR1_SB)
+#define SPI_FLAG_ADDR		(1 << I2C_SR1_ADDR)
+#define SPI_FLAG_BTF		(1 << I2C_SR1_BTF)
+#define SPI_FLAG_STOPF		(1 << I2C_SR1_STOPF)
+#define SPI_FLAG_TXE		(1 << I2C_SR1_TXE)
+#define SPI_FLAG_BERR		(1 << I2C_SR1_BERR)
+#define SPI_FLAG_ARLO		(1 << I2C_SR1_ARLO)
+#define SPI_FLAG_AF	    	(1 << I2C_SR1_AF)
+#define SPI_FLAG_OVR		(1 << I2C_SR1_OVR)
+#define SPI_FLAG_TIMEOUT    (1 << I2C_SR1_TIMEOUT)
+
 
 /******************************************************************************************
 *                         APIs supported by this driver
@@ -71,18 +86,18 @@ typedef struct
 /*
  * Peripheral Clock setup.
  */
-void I2C_PeriClockControl(I2C_RegDef_t *pSPIx, uint8_t EnorDi);
+void I2C_PeriClockControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi);
 
 /*
  * Init and De-init.
  */
-void I2C_Init(I2C_Handle_t *pSPIHandle);  // (void), the parameters will be written later
-void I2C_DeInit(I2C_RegDef_t *pSPIx);
+void I2C_Init(I2C_Handle_t *pI2CHandle);  // (void), the parameters will be written later
+void I2C_DeInit(I2C_RegDef_t *pI2Cx);
 
 /*
  * Data Send and Receive.
  */
-
+void I2C_MasterSendData(I2C_Handle_t *pI2CHandle,uint8_t *pTxbuffer, uint32_t Len, uint8_t SlaveAddr);
 
 
 /*
@@ -96,13 +111,13 @@ void I2C_IRQPriorityConfig(uint32_t IRQNumber, uint32_t IRQPriority);
  * flag status.
  */
 
-uint8_t I2C_GETFlagStatus(I2C_RegDef_t *pSPIx , uint32_t FlagName);
+uint8_t I2C_GETFlagStatus(I2C_RegDef_t *pI2Cx , uint32_t FlagName);
 
 /*
  * Other Peripheral Control APIs.
  */
-void I2C_PeripheralControl(I2C_RegDef_t *pSPIx, uint8_t EnorDi);
-uint8_t I2C_GETFlagStatus(I2C_RegDef_t *pSPIx , uint32_t FlagName);
+void I2C_PeripheralControl(I2C_RegDef_t *pI2Cx, uint8_t EnorDi);
+uint8_t I2C_GETFlagStatus(I2C_RegDef_t *pI2Cx , uint32_t FlagName);
 
 
 /*
