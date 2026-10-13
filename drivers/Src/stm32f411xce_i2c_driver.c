@@ -10,7 +10,7 @@
 uint16_t AHB_PreScaler[8] = {2,4,8,16,64,128,256,512};
 uint16_t APB1_Prescaler[4]= {2,4,8,16};
 
-static void I2CGenerateStartCondition(I2C_RegDef_t *pI2C)
+static void I2CGenerateStartCondition(I2C_RegDef_t *pI2C);
 static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cc, uint8_t SlaveAddr);
 
 
