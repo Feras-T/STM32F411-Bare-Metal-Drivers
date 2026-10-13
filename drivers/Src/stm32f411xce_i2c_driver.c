@@ -11,7 +11,22 @@ uint16_t AHB_PreScaler[8] = {2,4,8,16,64,128,256,512};
 uint16_t APB1_Prescaler[4]= {2,4,8,16};
 
 static void I2CGenerateStartCondition(I2C_RegDef_t *pI2C)
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cc, uint8_t SlaveAddr);
 
+
+static void I2CGenerateStartCondition(I2C_RegDef_t *pI2Cx)
+{
+	pI2Cx->CR1 |= (1 << I2C_CR1_START);
+}
+
+
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cc, uint8_t SlaveAddr)
+{
+	// As it mentiond below in int slave addres we take only
+	//ADD not ADD0 which is bit 0 so we shit by 1
+	//and start from the secound bit (bit 1)
+	SlaveAddr = SlaveAddr << 1;
+}
 //Shall be review
 /*
  * Peripheral Clock setup
@@ -196,6 +211,16 @@ void I2C_DeInit(I2C_RegDef_t *pSPIx)
 
 }
 
+uint8_t I2C_GETFlagStatus(I2C_RegDef_t *pI2Cx , uint32_t FlagName)
+{
+	if(pI2Cx->SR1 & FlagName) 		//if Flage name wehther it is  SPI_TXE_FLAG or any other on is
+	{
+		return FLAG_SET;
+	}
+	return FLAG_RESET;
+}
+
+
 
 void I2C_MasterSendData(I2C_Handle_t *pI2CHandle,uint8_t *pTxbuffer, uint32_t Len, uint8_t SlaveAddr)
 {
@@ -204,12 +229,10 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle,uint8_t *pTxbuffer, uint32_t Le
 
 	//2. confirm that start generation is completed by checking the SB flag in the SR1
 	//  Note: Until SB is cleared SCL will be stretched (pulled low)
-	while(I2C_GETFlagStatus(pI2CHandle->pI2Cx, FLAG_SB));
+	while(! I2C_GETFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB));
+	I2C_ExecuteAddressPhase(pI2CHandle->pI2Cx,SlaveAddr);
+
 
 }
 
 
-void I2CGenerateStartCondition(I2C_RegDef_t *pI2Cx)
-{
-	pI2Cx->CR1 |= (1 << I2C_CR1_START);
-}

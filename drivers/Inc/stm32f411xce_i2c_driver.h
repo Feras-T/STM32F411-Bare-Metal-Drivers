@@ -62,20 +62,20 @@ typedef struct
 #define I2C_FM_DUTY_2			0
 #define I2C_FM_DUTY_16_9		1
 
-//I2C Status register Micros (page 494)
+//I2C Status register Macros (page 494)
 
-#define SPI_FLAG_TXE		(1 << I2C_SR1_TXE)
-#define SPI_FLAG_RXNE		(1 << I2C_SR1_RXNE)
+#define I2C_FLAG_TXE		(1 << I2C_SR1_TXE)
+#define I2C_FLAG_RXNE		(1 << I2C_SR1_RXNE)
 #define I2C_FLAG_SB			(1 << I2C_SR1_SB)
-#define SPI_FLAG_ADDR		(1 << I2C_SR1_ADDR)
-#define SPI_FLAG_BTF		(1 << I2C_SR1_BTF)
-#define SPI_FLAG_STOPF		(1 << I2C_SR1_STOPF)
-#define SPI_FLAG_TXE		(1 << I2C_SR1_TXE)
-#define SPI_FLAG_BERR		(1 << I2C_SR1_BERR)
-#define SPI_FLAG_ARLO		(1 << I2C_SR1_ARLO)
-#define SPI_FLAG_AF	    	(1 << I2C_SR1_AF)
-#define SPI_FLAG_OVR		(1 << I2C_SR1_OVR)
-#define SPI_FLAG_TIMEOUT    (1 << I2C_SR1_TIMEOUT)
+#define I2C_FLAG_ADDR		(1 << I2C_SR1_ADDR)
+#define I2C_FLAG_BTF		(1 << I2C_SR1_BTF)
+#define I2C_FLAG_STOPF		(1 << I2C_SR1_STOPF)
+#define I2C_FLAG_TXE		(1 << I2C_SR1_TXE)
+#define I2C_FLAG_BERR		(1 << I2C_SR1_BERR)
+#define I2C_FLAG_ARLO		(1 << I2C_SR1_ARLO)
+#define I2C_FLAG_AF	    	(1 << I2C_SR1_AF)
+#define I2C_FLAG_OVR		(1 << I2C_SR1_OVR)
+#define I2C_FLAG_TIMEOUT    (1 << I2C_SR1_TIMEOUT)
 
 
 /******************************************************************************************
