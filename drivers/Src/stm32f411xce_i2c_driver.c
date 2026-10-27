@@ -12,20 +12,37 @@ uint16_t APB1_Prescaler[4]= {2,4,8,16};
 
 static void I2CGenerateStartCondition(I2C_RegDef_t *pI2C);
 static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cc, uint8_t SlaveAddr);
-
+static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx);
+static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
 
 static void I2CGenerateStartCondition(I2C_RegDef_t *pI2Cx)
 {
 	pI2Cx->CR1 |= (1 << I2C_CR1_START);
 }
 
+static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx)
+{
+	pI2Cx->CR1 |= (1 << I2C_CR1_STOP);
+}
 
-static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cc, uint8_t SlaveAddr)
+static void I2C_ExecuteAddressPhase(I2C_RegDef_t *pI2Cx, uint8_t SlaveAddr)
 {
 	// As it mentiond below in int slave addres we take only
 	//ADD not ADD0 which is bit 0 so we shit by 1
 	//and start from the secound bit (bit 1)
+	//also it is last bit, so we shift by 1 to let a space
+	//for R/W bit
 	SlaveAddr = SlaveAddr << 1;
+	SlaveAddr &= ~(1); //slaveaddr + R/W
+	pI2Cx->DR =SlaveAddr;
+}
+
+static void I2C_ClearADDRFlag(I2C_RegDef_t *pI2Cx)
+{
+	uint32_t dummyRead = pI2Cx->SR1;
+	dummyRead = pI2Cx->SR1;
+	(void)dummyRead; //I know this variable isn’t used afterward; that’s intentional.”
+	//It helps prevent an unused variable warning.
 }
 //Shall be review
 /*
@@ -176,7 +193,8 @@ void I2C_Init (I2C_Handle_t *pI2CHandle)
 	{
 		//mode is standared mode
 		//Check the equation at the muc1 note P5 Pic 16.
-		ccr_vale= RCC_GetPCLK1Value()/ (2 *PI2CHandle->I2C_Config.I2C_SCLSpeed);
+
+		ccr_value = RCC_GetPCLK1Value()/ (2 *pI2CHandle->I2C_Config.I2C_SCLSpeed);
 		tempreg |= (ccr_value & 0xFFF); //we mask with the first 12 bit (at CCR REGISTE page 499.
 	}else
 	{
@@ -187,12 +205,12 @@ void I2C_Init (I2C_Handle_t *pI2CHandle)
 		if(pI2CHandle->I2C_Config.I2C_FMDutyCycle == I2C_FM_DUTY_2)
 		{
 			//Equation in note MCU1 P5 Pic 17.
-			ccr_vale= RCC_GetPCLK1Value()/ (3 *PI2CHandle->I2C_Config.I2C_SCLSpeed);
+			ccr_value= RCC_GetPCLK1Value()/ (3 *pI2CHandle->I2C_Config.I2C_SCLSpeed);
 
 		}else
 		{
 			//Equation in note MCU1 P5 Pic 17.
-			ccr_vale= RCC_GetPCLK1Value()/ (25 *PI2CHandle->I2C_Config.I2C_SCLSpeed);
+			ccr_value= RCC_GetPCLK1Value()/ (25 *pI2CHandle->I2C_Config.I2C_SCLSpeed);
 		}
 
 		tempreg |= (ccr_value & 0xFFF);
@@ -230,9 +248,34 @@ void I2C_MasterSendData(I2C_Handle_t *pI2CHandle,uint8_t *pTxbuffer, uint32_t Le
 	//2. confirm that start generation is completed by checking the SB flag in the SR1
 	//  Note: Until SB is cleared SCL will be stretched (pulled low)
 	while(! I2C_GETFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_SB));
+	//3. Send the address of the slave with r/w bit set to w(0) (total 8 bits)
 	I2C_ExecuteAddressPhase(pI2CHandle->pI2Cx,SlaveAddr);
+	//4. confirm that adress phase is completed by cheking the ADDR flag in tech SR1
+	while(! I2C_GETFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_ADDR) );
 
+	//5. clearthe ADDR flag according  to its sequence
+	// Note util the ADDR is cleared SCL will streched (pulled low)
+	I2C_ClearADDRFlag(pI2CHandle->pI2Cx);
 
+	//6. send the data until the len becomes zero
+	while ( Len > 0)
+	{
+		while(! I2C_GETFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_TXE) ); //wait till TXE is set
+		pI2CHandle->pI2Cx->DR =*pTxbuffer;
+		pTxbuffer++;
+		Len--;
+	}
+	//7.
+	// when Len becomes zero wait for TXE=1 and BTF=1 before generating the STOP condition
+	// Note: TXE=1, BTF= 1, means that both SR and DR are empty and next transmittion should begin
+	//when BTF=1, SCL will stretched (pull down)
+	while(! I2C_GETFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_TXE) );
+
+	while(! I2C_GETFlagStatus(pI2CHandle->pI2Cx, I2C_FLAG_BTF) );
+	//8. Generating STOP condition and master need not to wait for the completion of stop condition
+	//	Note: generating STOP, Automaticsally clears the BTF
+	I2C_GenerateStopCondition(pI2CHandle->pI2Cx);
 }
+
 
 
